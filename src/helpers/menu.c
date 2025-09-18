@@ -36,5 +36,10 @@ void programUI()
 {
     clearScreen();
     printf("############################################\n");
+    printf("Controles:\n");
+    printf("W/S ou ↑/↓: mover para frente/para trás\n");
+    printf("A/D ou ←/→: virar para esquerda/direita\n");
+    printf("Mouse: olhar ao redor\n");
+    printf("Clique direito: travar/destravar controle do mouse\n");
     printf("############################################\n");
 }

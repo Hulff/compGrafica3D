@@ -87,7 +87,7 @@ void moveBackwards()
 // ler teclado
 void teclado(unsigned char key, int x, int y)
 {
-    printf("Tecla: %c\n", key);
+    // printf("Tecla: %c\n", key);
 
     switch (key)
     {
@@ -115,7 +115,7 @@ void teclado(unsigned char key, int x, int y)
 // ler as setas (sem uso ainda)
 void tecladoEspecial(int key, int x, int y)
 {
-    printf("Tecla especial: %d\n", key);
+    // printf("Tecla especial: %d\n", key);
     switch (key)
     {
     case GLUT_KEY_UP:
@@ -131,7 +131,7 @@ void tecladoEspecial(int key, int x, int y)
         beta += 0.1f;
         break;
     }
-    
+    programUI();
     glutPostRedisplay();
 }
 
@@ -157,9 +157,12 @@ void mouseMove(int x, int y)
 
         float worldX = (x / (float)windW) * 10 - 5;           // -5 a 5
         float worldY = ((windH - y) / (float)windH) * 10 - 5; // -5 a 5
-        printf("Mouse move (mundo): %.2f, %.2f\n", worldX, worldY);
+        // printf("Mouse move (mundo): %.2f, %.2f\n", worldX, worldY);
+
         alpha = worldY * 1;
         beta = worldX * 1;
+        programUI();
+        
         glutPostRedisplay();
     }
 }
