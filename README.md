@@ -19,7 +19,7 @@ Aqui vai uma sugestão:
 
 ## 👥 Equipe
 
-* Nome 1 (Matrícula)
+* Nome Pedro Hugo Ursulino Fernandes 2023004677
 * Nome 2 (Matrícula)
 * Nome 3 (Matrícula)
 * Nome 4 (Matrícula)

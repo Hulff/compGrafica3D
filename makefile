@@ -5,22 +5,21 @@ TARGET = game
 CC = gcc
 
 # Flags de compilação
-CFLAGS = -Wall -O2
+CFLAGS = -Wall -O2 -Iinclude
 
 # Bibliotecas necessárias (OpenGL, GLU e GLUT)
 LIBS = -lGL -lGLU -lglut
 
-# Arquivos fonte (.c)
-SRCS = main.c \
-       game.c \
-       render.c \
-       camera.c \
-       utils.c
+# Diretórios de código-fonte
+SRC_DIRS = . helpers operations shape
 
-# Arquivos objeto (.o) gerados automaticamente
+# Arquivos fonte (.c) em todos os diretórios
+SRCS = $(wildcard $(addsuffix /*.c, $(SRC_DIRS)))
+
+# Arquivos objeto correspondentes (.o)
 OBJS = $(SRCS:.c=.o)
 
-# Regra padrão (gera o jogo)
+# Regra padrão (gera o executável)
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
