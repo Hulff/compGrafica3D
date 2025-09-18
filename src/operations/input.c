@@ -11,10 +11,12 @@
 #include "menu.h"
 #include "config.h"
 
+
 extern float r, g, b;
 extern float alpha, beta, delta;
+extern float movement; // movimento da câmera
+extern float camX, camY, camZ; // posição do jogador
 // extern float xpos, ypos; // posição da camera
-
 
 typedef enum
 {
@@ -27,8 +29,6 @@ typedef enum
     REFLECT,
     SELECTION,
 } Operation;
-
-
 
 int n_points = 0;         // número de pontos criados
 int lockMouseControl = 0; // trava o controle do mouse
@@ -53,6 +53,37 @@ void resetStates()
     n_points = 0;            // reseta o numero de pontos
 }
 
+void moveForward()
+{
+    float dirX = cosf(alpha) * sinf(beta);
+    float dirY = sinf(alpha);
+    float dirZ = -cosf(alpha) * cosf(beta);
+
+    float len = sqrtf(dirX * dirX + dirY * dirY + dirZ * dirZ);
+    dirX /= len;
+    dirY /= len;
+    dirZ /= len;
+
+    camX += dirX * movement;
+    camY += dirY * movement;
+    camZ += dirZ * movement;
+}
+void moveBackwards()
+{
+    float dirX = cosf(alpha) * sinf(beta);
+    float dirY = sinf(alpha);
+    float dirZ = -cosf(alpha) * cosf(beta);
+
+    float len = sqrtf(dirX * dirX + dirY * dirY + dirZ * dirZ);
+    dirX /= len;
+    dirY /= len;
+    dirZ /= len;
+
+    camX += dirX * -movement;
+    camY += dirY * -movement;
+    camZ += dirZ * -movement;
+}
+
 // ler teclado
 void teclado(unsigned char key, int x, int y)
 {
@@ -66,9 +97,16 @@ void teclado(unsigned char key, int x, int y)
         b = 0;
         break;
     case 'w':
-        r = 1;
-        g = 1;
-        b = 1;
+        moveForward();
+        break;
+    case 's':
+        moveBackwards();
+        break;
+    case 'a':
+        beta -= 0.1f;
+        break;
+    case 'd':
+        beta += 0.1f;
         break;
     }
 
@@ -77,8 +115,24 @@ void teclado(unsigned char key, int x, int y)
 // ler as setas (sem uso ainda)
 void tecladoEspecial(int key, int x, int y)
 {
-    // printf("Tecla especial: %d\n", key)
+    printf("Tecla especial: %d\n", key);
+    switch (key)
+    {
+    case GLUT_KEY_UP:
+        moveForward();
+        break;
+    case GLUT_KEY_DOWN:
+        moveBackwards();
+        break;
+    case GLUT_KEY_LEFT:
+        beta -= 0.1f;
+        break;
+    case GLUT_KEY_RIGHT:
+        beta += 0.1f;
+        break;
+    }
     
+    glutPostRedisplay();
 }
 
 // ler pos do clique do mouse
@@ -104,8 +158,8 @@ void mouseMove(int x, int y)
         float worldX = (x / (float)windW) * 10 - 5;           // -5 a 5
         float worldY = ((windH - y) / (float)windH) * 10 - 5; // -5 a 5
         printf("Mouse move (mundo): %.2f, %.2f\n", worldX, worldY);
-        alpha = worldY * -15;
-        beta = worldX * 15;
+        alpha = worldY * 1;
+        beta = worldX * 1;
         glutPostRedisplay();
     }
 }
@@ -123,3 +177,4 @@ void mouseWheel(int wheel, int direction, int x, int y)
 
     glutPostRedisplay();
 }
+

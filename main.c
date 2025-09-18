@@ -7,18 +7,52 @@
 #include "config.h"
 #include "input.h"
 #include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define SPEED 0.01f
+#define NUM_RINGS 5
+
+typedef struct
+{
+    float x, y, z;
+} Ring;
+Ring rings[NUM_RINGS];
 
 // Definição das variáveis globais
 float r = 1.0f, g = 1.0f, b = 1.0f;
 float alpha = 0.0f, beta = 0.0f, delta = 1.0f; // ângulos de rotação e zoom
+float camX = 0, camY = 0, camZ = 0;            // posição do jogador
 
-float xpos = 0.0f, ypos = 0.0f, zpos = 0.0f; // posição da camera
+
+float movement = 0.1f;
 
 //
 
+void initRings()
+{
+    for (int i = 0; i < NUM_RINGS; i++)
+    {
+        rings[i].x = (rand() % 20 - 10) / 2.0f;
+        rings[i].y = (rand() % 20 - 10) / 2.0f;
+        rings[i].z = -(float)(i + 1) * 10.0f;
+    }
+}
 
+void drawRings()
+{
+    for (int i = 0; i < NUM_RINGS; i++)
+    {
+        {
+            glPushMatrix();
+            glTranslatef(rings[i].x, rings[i].y, rings[i].z);
+            glColor3f(0.5, 0.5, 1.0);
+            glutSolidTorus(0.05, 1.0, 20, 60);
+            glPopMatrix();
+        }
+    }
+}
 
 void init(void)
 {
@@ -28,35 +62,41 @@ void init(void)
     glLoadIdentity();
     gluPerspective(60.0, (float)windW / windH, 0.1, 100.0);
     glMatrixMode(GL_MODELVIEW);
+    initRings();
 };
+
 void display()
 {
     glClearColor(r, g, b, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
-    
     glLoadIdentity();
-    
-    glColor3f(1.0, 0.0, 0.0); // cor do cubo
 
-    glTranslatef(0.0f, 0.0f, -5.0f); // afastar o cubo da camera
-    glRotatef(alpha, 1.0f, 0.0f, 0.0f);
-    glRotatef(beta, 0.0f, 1.0f, 0.0f);
-    glScalef(delta, delta, delta);
+    float dirX = cosf(alpha) * sinf(beta);
+    float dirY = sinf(alpha);
+    float dirZ = -cosf(alpha) * cosf(beta);
 
-    glutSolidCube(1.0);
+    gluLookAt(camX, camY, camZ,
+              camX + dirX, camY + dirY, camZ + dirZ,
+              0, 1, 0);
 
+    // glPushMatrix();
+    //     glColor3f(1.0, 0.0, 0.0); // cor do cubo
+    //     glTranslatef(0.0f, 0.0f, -5.0f+movement); // afastar o cubo da camera
+    //     // glRotatef(alpha, 1.0f, 0.0f, 0.0f);
+    //     // glRotatef(beta, 0.0f, 1.0f, 0.0f);
+    //     glScalef(delta, delta, delta);
+    //     glutSolidCube(1.0);
+    // glPopMatrix();
 
+    drawRings();
     glutSwapBuffers();
 }
 
 void idle()
 {
-    // xpos += SPEED * 0.01f;
-    // ypos += SPEED * 0.01f;
-    // zpos += SPEED * 0.01f;
-    // glutPostRedisplay();
+    
 }
 
 int main(int argc, char **argv)
