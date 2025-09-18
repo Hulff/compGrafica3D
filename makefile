@@ -8,7 +8,7 @@ CC = gcc
 CFLAGS = -Wall -O2 -Iinclude
 
 # Bibliotecas necessárias
-LIBS = -lGL -lGLU -lglut
+LIBS = -lGL -lGLU -lglut -lm
 
 # Diretórios
 SRC_DIR = src

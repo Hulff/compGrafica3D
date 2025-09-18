@@ -12,14 +12,12 @@ void startUI(int *option)
     printf("Seja bem-vindo ao Paint 2025 atualizado Premium!\n");
     printf("############################################\n");
     printf("Pressione '1' iniciar o modo de desenho livre\n");
-    printf("Pressione '2' para carregar algum desenho salvo\n");
-    printf("Pressione '3' para sair.\n");
-    printf("Pressione '4' para as dicas de atalhos.\n");
+    printf("Pressione '2' para sair.\n");
     printf("############################################\n");
     while (1)
     {
         printf("Escolha uma opcao: ");
-        if (scanf("%d", &temp) == 1 && temp >= 1 && temp <= 4) // scanf("%d", &temp) retorna 1 se a entrada foi válida
+        if (scanf("%d", &temp) == 1 && temp >= 1 && temp <= 2) // scanf("%d", &temp) retorna 1 se a entrada foi válida
         {
             *option = temp;
             break;
@@ -32,67 +30,11 @@ void startUI(int *option)
         }
     }
 }
-void keyBindsUI()
-
-{
-    char temp;
-    clearScreen();
-    printf("Controles dentro do programa:\n");
-    printf("############################################\n");
-    printf("Pressione 'p' para criar um ponto.\n");
-    printf("Pressione 'l' para criar um segmento de reta.\n");
-    printf("Pressione 'k' para iniciar criacao livre.\n");
-    printf("Pressione 'j' para iniciar criacao livre com figura preenchida.\n");
-    printf("Pressione 'q' para aplicar o quickhull.\n");
-    printf("Pressione 't' para transladar uma figura.\n");
-    printf("Pressione 'r' para rotacionar uma figura.\n");
-    printf("Pressione 'e' para escala uma figura.\n");
-    printf("Pressione 'i' para Reflexao em uma figura.\n");
-    printf("Pressione 'z' para cisalhar uma figura.\n");
-    printf("Pressione 'i' para reflexao de uma figura.\n");
-    printf("Pressione 'c' para escolher a cor da figura selecionada figura.\n");
-    printf("Pressione 's' para selecionar uma figura.\n");
-    printf("Pressione 'x' para apagar a figura selecionada.\n");
-    printf("Pressione 'd' para salvar a figura atual.\n");
-    printf("Pressione 'a' para animar o desenho\n");
-    printf("############################################\n");
-
-    while (1)
-    {
-        printf("Escolha uma opcao: ");
-        if (scanf(" %c", &temp) == 1 && temp == 'q')
-        {
-            break;
-        }
-        else
-        {
-            printf("Opcao inválida. Tente novamente.\n");
-            while (getchar() != '\n')
-                ;
-        }
-    }
-};
 
 void programUI()
 
 {
     clearScreen();
     printf("############################################\n");
-    printf("Pressione 'p' para criar um ponto.\n");
-    printf("Pressione 'l' para criar um segmento de reta.\n");
-    printf("Pressione 'k' para iniciar criacao livre.\n");
-    printf("Pressione 'j' para iniciar criacao livre com figura preenchida.\n");
-    printf("Pressione 'q' para aplicar o quickhull.\n");
-    printf("Pressione 't' para transladar uma figura.\n");
-    printf("Pressione 'r' para rotacionar uma figura.\n");
-    printf("Pressione 'e' para escala uma figura.\n");
-    printf("Pressione 'i' para Reflexao em uma figura.\n");
-    printf("Pressione 'z' para cisalhar uma figura.\n");
-    printf("Pressione 'i' para reflexao de uma figura.\n");
-    printf("Pressione 'c' para escolher a cor da figura selecionada figura.\n");
-    printf("Pressione 's' para selecionar uma figura.\n");
-    printf("Pressione 'x' para apagar a figura selecionada.\n");
-    printf("Pressione 'd' para salvar a figura atual.\n");
-    printf("Pressione 'a' para animar o desenho\n");
     printf("############################################\n");
 }

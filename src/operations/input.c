@@ -12,7 +12,9 @@
 #include "config.h"
 
 extern float r, g, b;
-extern ShapeStack *storage; // pilha global de figuras (criado na Main)
+extern float alpha, beta, delta;
+// extern float xpos, ypos; // posição da camera
+
 
 typedef enum
 {
@@ -26,16 +28,10 @@ typedef enum
     SELECTION,
 } Operation;
 
-typedef enum
-{
-    SHEAR_HORIZONTAL,
-    SHEAR_VERTICAL
-} ShearType;
 
-bool waitingForClick = false; // controla captura de ponto
-bool createShapeMode = false; // controla criação de forma
 
-int n_points = 0; // número de pontos criados
+int n_points = 0;         // número de pontos criados
+int lockMouseControl = 0; // trava o controle do mouse
 
 Operation currentOperation; // guarda qual operação está sendo feita
 
@@ -53,8 +49,6 @@ float colors[8][3] = {
 // helper para resetar estados
 void resetStates()
 {
-    waitingForClick = false; // cancelar captura de ponto
-    createShapeMode = false; // cancelar modo de criação de forma
     currentOperation = NONE; // cancelar operação atual
     n_points = 0;            // reseta o numero de pontos
 }
@@ -76,7 +70,6 @@ void teclado(unsigned char key, int x, int y)
         g = 1;
         b = 1;
         break;
-    case 'q':
     }
 
     glutPostRedisplay();
@@ -84,15 +77,8 @@ void teclado(unsigned char key, int x, int y)
 // ler as setas (sem uso ainda)
 void tecladoEspecial(int key, int x, int y)
 {
-    printf("Tecla especial: %d\n", key);
-    if (key == GLUT_KEY_UP)
-    {
-        printf("Seta ↑\n");
-    }
-    if (key == GLUT_KEY_DOWN)
-    {
-        printf("Seta ↓\n");
-    }
+    // printf("Tecla especial: %d\n", key)
+    
 }
 
 // ler pos do clique do mouse
@@ -100,14 +86,40 @@ void mouse(int button, int state, int x, int y)
 {
     if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)
     {
-        resetStates(); // cancelar captura de ponto
+        lockMouseControl = !lockMouseControl; // trava/destrava o controle do mouse
+        if (lockMouseControl)
+            printf("Mouse control locked\n");
+        else
+            printf("Mouse control unlocked\n");
     }
 }
 // ler pos do mouse sempre
 void mouseMove(int x, int y)
 {
+
+    if (lockMouseControl)
+    {
+        // converter coordenadas da tela para coordenadas do mundo
+
+        float worldX = (x / (float)windW) * 10 - 5;           // -5 a 5
+        float worldY = ((windH - y) / (float)windH) * 10 - 5; // -5 a 5
+        printf("Mouse move (mundo): %.2f, %.2f\n", worldX, worldY);
+        alpha = worldY * -15;
+        beta = worldX * 15;
+        glutPostRedisplay();
+    }
 }
 
 void mouseWheel(int wheel, int direction, int x, int y)
 {
+    if (direction > 0)
+    {
+        delta *= 1.1f; // zoom in
+    }
+    else
+    {
+        delta *= 0.9f; // zoom out
+    }
+
+    glutPostRedisplay();
 }
