@@ -7,35 +7,37 @@ CC = gcc
 # Flags de compilação
 CFLAGS = -Wall -O2 -Iinclude
 
-# Bibliotecas necessárias (OpenGL, GLU e GLUT)
+# Bibliotecas necessárias
 LIBS = -lGL -lGLU -lglut
 
-# Diretórios de código-fonte
-SRC_DIRS = . helpers operations shape
+# Diretórios
+SRC_DIR = src
+OBJ_DIR = build
 
-# Arquivos fonte (.c) em todos os diretórios
-SRCS = $(wildcard $(addsuffix /*.c, $(SRC_DIRS)))
+# Todos os arquivos .c (raiz + src e subpastas)
+SRCS = $(shell find $(SRC_DIR) -name '*.c') $(wildcard *.c)
 
-# Arquivos objeto correspondentes (.o)
-OBJS = $(SRCS:.c=.o)
+# Arquivos objeto em build/
+OBJS = $(patsubst %.c,$(OBJ_DIR)/%.o,$(SRCS))
 
-# Regra padrão (gera o executável)
+# Regra padrão
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
-# Regra para compilar cada .c em .o
-%.o: %.c
+# Compilação: build/espelho das pastas
+$(OBJ_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Executar o jogo
+# Executar
 run: all
 	./$(TARGET)
 
-# Limpar arquivos temporários
+# Limpar
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -rf $(OBJ_DIR) $(TARGET)
 
-# Recompilar do zero
+# Rebuild
 rebuild: clean all

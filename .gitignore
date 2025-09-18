@@ -1,0 +1,24 @@
+# Arquivos objeto
+*.o
+#arquivos salvos
+*.txt
+
+# Executáveis compilados
+game
+game.exe
+main
+
+# Pastas de compilação
+/build/
+/bin/
+/obj/
+
+# Arquivos temporários
+*~
+*.swp
+*.tmp
+
+# Arquivos gerados pelo Makefile
+*.dSYM
+
+.vscode/
