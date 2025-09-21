@@ -31,8 +31,11 @@ Aqui vai uma sugestão:
 Descreva aqui a proposta do jogo:
 
 * Qual é a inspiração (um jogo conhecido, ou ideia original).
+starfox,gta's 
 * Qual é o objetivo do jogador.
+completar o circuito atravesando todos os aneis
 * Quais são os principais elementos da jogabilidade.
+controlar a nave/aviao para chegar até o final
 
 ---
 
@@ -40,7 +43,9 @@ Descreva aqui a proposta do jogo:
 
 * Descrição geral do funcionamento.
 * Como jogar (controles: teclado/mouse).
+usando wasd para movimento e setas ou mouse para controle da camera
 * Objetivos principais dentro do jogo.
+controlar a nave/aviao para chegar até o final
 
 ---
 
@@ -60,15 +65,15 @@ Explique como o jogo foi implementado:
 
 O jogo implementa os seguintes conceitos:
 
-* ✅ **Carregamento de objetos 3D com cores distintas**
-* ✅ **Iluminação:**
+* [ ] **Carregamento de objetos 3D com cores distintas**
+* [ ] **Iluminação:**
 
   * Ambiente
   * Difusa
   * Especular
-* ✅ **Câmera para navegação/visualização da cena**
-* ✅ **Projeções (perspectiva e/ou ortogonal)**
-* ✅ **Remoção de superfícies ocultas (Depth Buffer)**
+* [ ] **Câmera para navegação/visualização da cena**
+* [ ] **Projeções (perspectiva e/ou ortogonal)**
+* [ ] **Remoção de superfícies ocultas (Depth Buffer)**
 
 ---
 
@@ -103,6 +108,8 @@ gcc main.c -o game -lGL -lGLU -lglut
 
 Liste aqui os principais problemas encontrados e como vocês resolveram.
 
+entender o funcionamento da camera e adição de elementos no cenário 
+
 ---
 
 ## 📽️ Apresentação
@@ -119,6 +126,3 @@ Liste aqui os principais problemas encontrados e como vocês resolveram.
 
 ---
 
-👉 Esse README já segue exatamente a estrutura pedida no documento da professora.
-
-Quer que eu monte também um **modelo de slides** baseado nisso (em tópicos), para você já usar no dia da apresentação?

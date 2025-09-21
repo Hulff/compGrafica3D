@@ -27,9 +27,9 @@ float r = 1.0f, g = 1.0f, b = 1.0f;
 float alpha = 0.0f, beta = 0.0f, delta = 1.0f; // ângulos de rotação e zoom
 float camX = 0, camY = 0, camZ = 0;            // posição do jogador
 
-float movement = 0.1f;
+float movement = 0.1f; // velocidade de movimento da câmera
+//implementar boost temporario depois de passar por anel
 
-//
 
 void initRings()
 {
