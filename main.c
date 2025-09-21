@@ -54,12 +54,13 @@ void initBuildings()
 void drawGround()
 {
     glPushMatrix();
+    glTranslatef(0.0f, -2.0f, 0.0f);
     glColor3f(0.3f, 1.0f, 0.3f); // cor verde para o chão
     glBegin(GL_QUADS);
-    glVertex3f(-50.0f, 0.0f, -50.0f);
-    glVertex3f(50.0f, 0.0f, -50.0f);
-    glVertex3f(50.0f, 0.0f, 50.0f);
-    glVertex3f(-50.0f, 0.0f, 50.0f);
+    glVertex3f(-250.0f, 0.0f, -250.0f);
+    glVertex3f(250.0f, 0.0f, -250.0f);
+    glVertex3f(250.0f, 0.0f, 250.0f);
+    glVertex3f(-250.0f, 0.0f, 250.0f);
     glEnd();
     glPopMatrix();
 }
@@ -117,14 +118,7 @@ void display()
 
     gluLookAt(camX, camY, camZ,camX + dirX, camY + dirY, camZ + dirZ,0, 1, 0);
 
-    // glPushMatrix();
-    //     glColor3f(1.0, 0.0, 0.0); // cor do cubo
-    //     glTranslatef(0.0f, 0.0f, -5.0f+movement); // afastar o cubo da camera
-    //     // glRotatef(alpha, 1.0f, 0.0f, 0.0f);
-    //     // glRotatef(beta, 0.0f, 1.0f, 0.0f);
-    //     glScalef(delta, delta, delta);
-    //     glutSolidCube(1.0);
-    // glPopMatrix();
+    //desenhar player
 
     drawGround();
     drawScenario();
