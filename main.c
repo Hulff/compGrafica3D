@@ -12,32 +12,59 @@
 #include <string.h>
 
 #define SPEED 0.01f
-#define NUM_RINGS 5
+#define NUM_RINGS 20
+#define NUM_BUILDINGS 20
 
 typedef struct
 {
     float x, y, z;
-} Ring;
-Ring rings[NUM_RINGS];
+} Structure;
+Structure rings[NUM_RINGS];
+Structure buildings[NUM_BUILDINGS];
 
 // Definição das variáveis globais
 float r = 1.0f, g = 1.0f, b = 1.0f;
 float alpha = 0.0f, beta = 0.0f, delta = 1.0f; // ângulos de rotação e zoom
 float camX = 0, camY = 0, camZ = 0;            // posição do jogador
 
+float movement = 0.1f; // velocidade de movimento da câmera
+//TODO implementar boost temporario depois de passar por anel
+//TODO adicionar iluminação
 
-float movement = 0.1f;
-
-//
 
 void initRings()
 {
     for (int i = 0; i < NUM_RINGS; i++)
     {
-        rings[i].x = (rand() % 20 - 10) / 2.0f;
-        rings[i].y = (rand() % 20 - 10) / 2.0f;
+        rings[i].x = (rand() % 20-10) / 2.0f;
+        rings[i].y = (rand() % 20) / 2.0f;
         rings[i].z = -(float)(i + 1) * 10.0f;
     }
+}
+
+void initBuildings()
+{
+    for (int i = 0; i < NUM_BUILDINGS; i++)
+    {
+        buildings[i].x = (rand() % 20 - 10) / 2.0f; // parecido com os anéis
+        buildings[i].z = -(float)(i + 1) * 7.0f;   // mesma distância incremental
+        buildings[i].y = 0.0f;
+    }
+}
+
+void drawGround()
+{
+    //TODO desenhar chão com textura
+    glPushMatrix();
+    glTranslatef(0.0f, -2.0f, 0.0f);
+    glColor3f(0.3f, 1.0f, 0.3f); // cor verde para o chão
+    glBegin(GL_QUADS);
+    glVertex3f(-250.0f, 0.0f, -250.0f);
+    glVertex3f(250.0f, 0.0f, -250.0f);
+    glVertex3f(250.0f, 0.0f, 250.0f);
+    glVertex3f(-250.0f, 0.0f, 250.0f);
+    glEnd();
+    glPopMatrix();
 }
 
 void drawRings()
@@ -54,6 +81,19 @@ void drawRings()
     }
 }
 
+void drawScenario()
+{
+    for (int i = 0; i < NUM_BUILDINGS; i++)
+    {
+        glPushMatrix();
+        glTranslatef(buildings[i].x, -2.0f, buildings[i].z);
+        glScalef(1.0f, 2.0f, 1.0f);
+        glColor3f(0.6f, 0.6f, 0.7f);
+        glutSolidCube(1.0f);
+        glPopMatrix();
+    }
+}
+
 void init(void)
 {
     glClearColor(r, g, b, 0);
@@ -63,6 +103,7 @@ void init(void)
     gluPerspective(60.0, (float)windW / windH, 0.1, 100.0);
     glMatrixMode(GL_MODELVIEW);
     initRings();
+    initBuildings();
 };
 
 void display()
@@ -77,26 +118,20 @@ void display()
     float dirY = sinf(alpha);
     float dirZ = -cosf(alpha) * cosf(beta);
 
-    gluLookAt(camX, camY, camZ,
-              camX + dirX, camY + dirY, camZ + dirZ,
-              0, 1, 0);
+    gluLookAt(camX, camY, camZ,camX + dirX, camY + dirY, camZ + dirZ,0, 1, 0);
 
-    // glPushMatrix();
-    //     glColor3f(1.0, 0.0, 0.0); // cor do cubo
-    //     glTranslatef(0.0f, 0.0f, -5.0f+movement); // afastar o cubo da camera
-    //     // glRotatef(alpha, 1.0f, 0.0f, 0.0f);
-    //     // glRotatef(beta, 0.0f, 1.0f, 0.0f);
-    //     glScalef(delta, delta, delta);
-    //     glutSolidCube(1.0);
-    // glPopMatrix();
+    //TODO desenhar player
+    //TODO importar modelo 3D de avião ou nave
 
+    drawGround();
+    drawScenario();
     drawRings();
     glutSwapBuffers();
 }
 
 void idle()
 {
-    
+
 }
 
 int main(int argc, char **argv)

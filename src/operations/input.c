@@ -11,10 +11,11 @@
 #include "menu.h"
 #include "config.h"
 
+#define M_PI 3.14159265f
 
 extern float r, g, b;
 extern float alpha, beta, delta;
-extern float movement; // movimento da câmera
+extern float movement;         // movimento da câmera
 extern float camX, camY, camZ; // posição do jogador
 // extern float xpos, ypos; // posição da camera
 
@@ -55,35 +56,52 @@ void resetStates()
     n_points = 0;            // reseta o numero de pontos
 }
 
+// movimentar para frente e para trás da camera/player
+//  função utilitária para calcular direção normalizada
+void getDirection(float a, float b, float *dx, float *dy, float *dz)
+{
+    *dx = cosf(a) * sinf(b);
+    *dy = sinf(a);
+    *dz = -cosf(a) * cosf(b);
+
+    float len = sqrtf((*dx) * (*dx) + (*dy) * (*dy) + (*dz) * (*dz));
+    *dx /= len;
+    *dy /= len;
+    *dz /= len;
+}
+
 void moveForward()
 {
-    float dirX = cosf(alpha) * sinf(beta);
-    float dirY = sinf(alpha);
-    float dirZ = -cosf(alpha) * cosf(beta);
-
-    float len = sqrtf(dirX * dirX + dirY * dirY + dirZ * dirZ);
-    dirX /= len;
-    dirY /= len;
-    dirZ /= len;
-
-    camX += dirX * movement;
-    camY += dirY * movement;
-    camZ += dirZ * movement;
+    float dx, dy, dz;
+    getDirection(alpha, beta, &dx, &dy, &dz);
+    camX += dx * movement;
+    camY += dy * movement;
+    camZ += dz * movement;
 }
+
 void moveBackwards()
 {
-    float dirX = cosf(alpha) * sinf(beta);
-    float dirY = sinf(alpha);
-    float dirZ = -cosf(alpha) * cosf(beta);
+    float dx, dy, dz;
+    getDirection(alpha, beta, &dx, &dy, &dz);
+    camX -= dx * movement;
+    camY -= dy * movement;
+    camZ -= dz * movement;
+}
 
-    float len = sqrtf(dirX * dirX + dirY * dirY + dirZ * dirZ);
-    dirX /= len;
-    dirY /= len;
-    dirZ /= len;
+void moveLeft()
+{
+    float dx, dy, dz;
+    getDirection(0.0f, beta - M_PI / 2, &dx, &dy, &dz); // alpha = 0 p/ não subir
+    camX += dx * movement;
+    camZ += dz * movement; // não mexe em Y
+}
 
-    camX += dirX * -movement;
-    camY += dirY * -movement;
-    camZ += dirZ * -movement;
+void moveRight()
+{
+    float dx, dy, dz;
+    getDirection(0.0f, beta + M_PI / 2, &dx, &dy, &dz);
+    camX += dx * movement;
+    camZ += dz * movement;
 }
 
 // ler teclado
@@ -105,10 +123,10 @@ void teclado(unsigned char key, int x, int y)
         moveBackwards();
         break;
     case 'a':
-        beta -= 0.1f;
+        moveLeft();
         break;
     case 'd':
-        beta += 0.1f;
+        moveRight();
         break;
     }
 
@@ -121,10 +139,10 @@ void tecladoEspecial(int key, int x, int y)
     switch (key)
     {
     case GLUT_KEY_UP:
-        moveForward();
+        alpha += 0.1f;
         break;
     case GLUT_KEY_DOWN:
-        moveBackwards();
+        alpha -= 0.1f;
         break;
     case GLUT_KEY_LEFT:
         beta -= 0.1f;
@@ -163,8 +181,9 @@ void mouseMove(int x, int y)
 
         alpha = worldY * mouseSensitivity;
         beta = worldX * mouseSensitivity;
-        programUI();
+
         
+
         glutPostRedisplay();
     }
 }
@@ -182,4 +201,3 @@ void mouseWheel(int wheel, int direction, int x, int y)
 
     glutPostRedisplay();
 }
-
