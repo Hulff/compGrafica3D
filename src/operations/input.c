@@ -19,6 +19,8 @@ extern float movement;         // movimento da câmera
 extern float camX, camY, camZ; // posição do jogador
 // extern float xpos, ypos; // posição da camera
 
+float mouseSensitivity = 0.3f; // ajuste entre 0.01 (muito lento) e 1.0 (rápido)
+
 typedef enum
 {
     TRANSLATE,
@@ -177,9 +179,10 @@ void mouseMove(int x, int y)
         float worldY = ((windH - y) / (float)windH) * 10 - 5; // -5 a 5
         // printf("Mouse move (mundo): %.2f, %.2f\n", worldX, worldY);
 
-        alpha = worldY * 1;
-        beta = worldX * 1;
-        // programUI();
+        alpha = worldY * mouseSensitivity;
+        beta = worldX * mouseSensitivity;
+
+        
 
         glutPostRedisplay();
     }
