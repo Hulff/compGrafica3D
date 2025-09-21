@@ -28,7 +28,8 @@ float alpha = 0.0f, beta = 0.0f, delta = 1.0f; // ângulos de rotação e zoom
 float camX = 0, camY = 0, camZ = 0;            // posição do jogador
 
 float movement = 0.1f; // velocidade de movimento da câmera
-//implementar boost temporario depois de passar por anel
+//TODO implementar boost temporario depois de passar por anel
+//TODO adicionar iluminação
 
 
 void initRings()
@@ -53,6 +54,7 @@ void initBuildings()
 
 void drawGround()
 {
+    //TODO desenhar chão com textura
     glPushMatrix();
     glTranslatef(0.0f, -2.0f, 0.0f);
     glColor3f(0.3f, 1.0f, 0.3f); // cor verde para o chão
@@ -118,7 +120,8 @@ void display()
 
     gluLookAt(camX, camY, camZ,camX + dirX, camY + dirY, camZ + dirZ,0, 1, 0);
 
-    //desenhar player
+    //TODO desenhar player
+    //TODO importar modelo 3D de avião ou nave
 
     drawGround();
     drawScenario();
@@ -128,6 +131,7 @@ void display()
 
 void idle()
 {
+
 }
 
 int main(int argc, char **argv)
