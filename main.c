@@ -12,7 +12,7 @@
 #include <string.h>
 
 #define SPEED 0.01f
-#define NUM_RINGS 5
+#define NUM_RINGS 20
 #define NUM_BUILDINGS 20
 
 typedef struct
