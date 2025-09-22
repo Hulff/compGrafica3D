@@ -1,10 +1,3 @@
-Beleza Hugo 🙌
-Vou montar um modelo de **README.md** bem estruturado para o trabalho, cobrindo tudo que está no documento da professora. Você pode preencher com detalhes específicos do jogo depois.
-
-Aqui vai uma sugestão:
-
----
-
 # 🎮 Projeto de Computação Gráfica – Jogo em OpenGL
 
 ## 📌 Informações da Disciplina
