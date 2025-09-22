@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <time.h>
+
 #define SPEED 0.01f
 #define NUM_RINGS 20
 #define NUM_BUILDINGS 20
@@ -23,7 +25,9 @@ typedef struct
 {
     float x, y, z;
 } Structure;
+
 float scaleFactors[NUM_BUILDINGS];
+
 Structure rings[NUM_RINGS];
 Structure buildings[NUM_BUILDINGS];
 
@@ -33,7 +37,13 @@ float alpha = 0.0f, beta = 0.0f, delta = 1.0f; // ângulos de rotação e zoom
 float camX = 0, camY = 0, camZ = 0;            // posição do jogador
 
 float movement = 0.1f; // velocidade de movimento da câmera
-// TODO implementar boost temporario depois de passar por anel
+
+int lastRingIndex = -1; // índice do último anel passado
+
+// variaveis de controle de tempo / frame rate
+const float fps = 60.0f;
+const float frameDelay = 1.0f / fps; // segundos
+double lastTime = 0.0;
 // TODO adicionar iluminação
 
 //
@@ -70,6 +80,11 @@ GLuint loadTexture(const char *filename)
     glBindTexture(GL_TEXTURE_2D, 0); // desliga a textura
 
     return texID; // retorna o ID da textura gerada
+}
+
+double getTime()
+{
+    return (double)clock() / CLOCKS_PER_SEC;
 }
 
 // auxiliares
@@ -195,11 +210,65 @@ void display()
     drawScenario();
     drawRings();
 
+    // check de passagem nos aneis
+    for (int i = 0; i < NUM_RINGS; i++)
+    {
+        float dx = camX - rings[i].x;
+        float dy = camY - rings[i].y;
+        float dz = camZ - rings[i].z;
+        float dist2 = dx * dx + dy * dy + dz * dz;
+
+        float threshold = 1.0f;
+
+        if (i != lastRingIndex + 1 && i != lastRingIndex && dist2 < threshold * threshold)
+        {
+            //TODO nao permitir repetição da mensagem
+            movement = 0.1f; // reduz a velocidade
+            printf("Passe pelo anel %d antes de passar pelo anel %d\n", lastRingIndex + 1, i);
+            continue; // pular para o próximo anel
+        }
+        
+        if (i != lastRingIndex && dist2 < threshold * threshold)
+        {
+            movement = 0.25f;  // aumenta a velocidade
+            lastRingIndex = i; // atualiza o último anel passado
+            printf("Velocidade Maxima atingida: %.2f\n", movement);
+
+            if (i == NUM_RINGS - 1)
+            {
+                printf("Voce passou por todos os aneis! Parabens!\n");
+            }
+            else
+            {
+                printf("Aneis restantes: %d\n", NUM_RINGS - i - 1);
+            }
+        }
+    }
+
     glutSwapBuffers();
 }
 
 void idle()
 {
+    double currentTime = getTime();
+    double delta = currentTime - lastTime;
+
+    if (delta >= frameDelay)
+    {
+        // lógica do jogo
+        if (movement > 0.1f)
+        {
+            movement -= 0.0005f;
+            if (movement < 0.1f)
+            {
+
+                movement = 0.1f;
+                printf("Velocidade Restaurada \n");
+            }
+        }
+
+        lastTime = currentTime;
+    }
 }
 
 int main(int argc, char **argv)
