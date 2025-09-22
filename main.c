@@ -15,10 +15,15 @@
 #define NUM_RINGS 20
 #define NUM_BUILDINGS 20
 
+// texturas
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 typedef struct
 {
     float x, y, z;
 } Structure;
+float scaleFactors[NUM_BUILDINGS];
 Structure rings[NUM_RINGS];
 Structure buildings[NUM_BUILDINGS];
 
@@ -28,15 +33,51 @@ float alpha = 0.0f, beta = 0.0f, delta = 1.0f; // ângulos de rotação e zoom
 float camX = 0, camY = 0, camZ = 0;            // posição do jogador
 
 float movement = 0.1f; // velocidade de movimento da câmera
-//TODO implementar boost temporario depois de passar por anel
-//TODO adicionar iluminação
+// TODO implementar boost temporario depois de passar por anel
+// TODO adicionar iluminação
 
+//
+GLuint textureID;
+GLuint groundTexture = 0; // <-- textura do chão
 
+GLuint loadTexture(const char *filename)
+{
+    int width, height, channels;
+    unsigned char *data = stbi_load(filename, &width, &height, &channels, 0);
+    if (!data)
+    {
+        printf("Erro ao carregar imagem: %s\n", filename);
+        return 0; // retorna 0 em caso de erro
+    }
+
+    GLuint texID;
+    glGenTextures(1, &texID);
+    glBindTexture(GL_TEXTURE_2D, texID);
+
+    // parâmetros de repetição e filtros
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    GLenum format = (channels == 4) ? GL_RGBA : GL_RGB;
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    gluBuild2DMipmaps(GL_TEXTURE_2D, format, width, height,
+                      format, GL_UNSIGNED_BYTE, data);
+
+    stbi_image_free(data);
+    glBindTexture(GL_TEXTURE_2D, 0); // desliga a textura
+
+    return texID; // retorna o ID da textura gerada
+}
+
+// auxiliares
 void initRings()
 {
     for (int i = 0; i < NUM_RINGS; i++)
     {
-        rings[i].x = (rand() % 20-10) / 2.0f;
+        rings[i].x = (rand() % 20 - 10) / 2.0f;
         rings[i].y = (rand() % 20) / 2.0f;
         rings[i].z = -(float)(i + 1) * 10.0f;
     }
@@ -47,23 +88,47 @@ void initBuildings()
     for (int i = 0; i < NUM_BUILDINGS; i++)
     {
         buildings[i].x = (rand() % 20 - 10) / 2.0f; // parecido com os anéis
-        buildings[i].z = -(float)(i + 1) * 7.0f;   // mesma distância incremental
+        buildings[i].z = -(float)(i + 1) * 7.0f;    // mesma distância incremental
         buildings[i].y = 0.0f;
+        scaleFactors[i] = (rand() % 3) + 2.0f; // fator de escala aleatório entre 2  e 5
     }
 }
 
 void drawGround()
 {
-    //TODO desenhar chão com textura
     glPushMatrix();
     glTranslatef(0.0f, -2.0f, 0.0f);
-    glColor3f(0.3f, 1.0f, 0.3f); // cor verde para o chão
+
+    if (groundTexture != 0)
+    {
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, groundTexture);
+    }
+    else
+    {
+        glDisable(GL_TEXTURE_2D);
+    }
+
+    int repeat = 120; // número de repetições no X e Y
+
     glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f);
     glVertex3f(-250.0f, 0.0f, -250.0f);
+    glTexCoord2f(repeat, 0.0f);
     glVertex3f(250.0f, 0.0f, -250.0f);
+    glTexCoord2f(repeat, repeat);
     glVertex3f(250.0f, 0.0f, 250.0f);
+    glTexCoord2f(0.0f, repeat);
     glVertex3f(-250.0f, 0.0f, 250.0f);
+
     glEnd();
+
+    if (groundTexture != 0)
+    {
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glDisable(GL_TEXTURE_2D);
+    }
+
     glPopMatrix();
 }
 
@@ -87,13 +152,15 @@ void drawScenario()
     {
         glPushMatrix();
         glTranslatef(buildings[i].x, -2.0f, buildings[i].z);
-        glScalef(1.0f, 2.0f, 1.0f);
+        float scale = scaleFactors[i];
+        glScalef(1.2f, scale * 1.0f, 1.0f);
         glColor3f(0.6f, 0.6f, 0.7f);
         glutSolidCube(1.0f);
         glPopMatrix();
     }
 }
 
+// principais
 void init(void)
 {
     glClearColor(r, g, b, 0);
@@ -104,6 +171,8 @@ void init(void)
     glMatrixMode(GL_MODELVIEW);
     initRings();
     initBuildings();
+    // carregar textura do chão (arquivo deve existir)
+    groundTexture = loadTexture("textures/grass.jpg"); // coloque sua imagem "grass.jpg" na pasta do executável
 };
 
 void display()
@@ -118,20 +187,19 @@ void display()
     float dirY = sinf(alpha);
     float dirZ = -cosf(alpha) * cosf(beta);
 
-    gluLookAt(camX, camY, camZ,camX + dirX, camY + dirY, camZ + dirZ,0, 1, 0);
-
-    //TODO desenhar player
-    //TODO importar modelo 3D de avião ou nave
+    gluLookAt(camX, camY, camZ,
+              camX + dirX, camY + dirY, camZ + dirZ,
+              0, 1, 0);
 
     drawGround();
     drawScenario();
     drawRings();
+
     glutSwapBuffers();
 }
 
 void idle()
 {
-
 }
 
 int main(int argc, char **argv)
