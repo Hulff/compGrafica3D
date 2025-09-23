@@ -360,7 +360,7 @@ void display()
         float dz = camZ - rings[i].z;
         float dist2 = dx * dx + dy * dy + dz * dz;
 
-        float threshold = 1.0f;
+        float threshold = 2.0f; // distância para considerar que passou pelo anel
 
         // se tentou passar fora de ordem
         if (i != lastRingIndex + 1 && i != lastRingIndex &&
