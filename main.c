@@ -24,6 +24,7 @@
 typedef struct
 {
     float x, y, z;
+    bool passed;
 } Structure;
 
 float scaleFactors[NUM_BUILDINGS];
@@ -44,6 +45,7 @@ int lastRingIndex = -1; // índice do último anel passado
 const float fps = 60.0f;
 const float frameDelay = 1.0f / fps; // segundos
 double lastTime = 0.0;
+bool wrongRing = false;
 // TODO adicionar iluminação
 
 //
@@ -220,18 +222,29 @@ void display()
 
         float threshold = 1.0f;
 
-        if (i != lastRingIndex + 1 && i != lastRingIndex && dist2 < threshold * threshold)
+        // se tentou passar fora de ordem
+        if (i != lastRingIndex + 1 && i != lastRingIndex &&
+            dist2 < threshold * threshold &&
+            !rings[i].passed && !wrongRing)
         {
-            //TODO nao permitir repetição da mensagem
             movement = 0.1f; // reduz a velocidade
-            printf("Passe pelo anel %d antes de passar pelo anel %d\n", lastRingIndex + 1, i);
-            continue; // pular para o próximo anel
+            printf("Passe pelo anel %d antes de passar pelo anel %d\n",
+                   lastRingIndex + 2, i + 1);
+
+            wrongRing = true; // trava até acertar o próximo
+            continue;
         }
-        
-        if (i != lastRingIndex && dist2 < threshold * threshold)
+
+        // se passou pelo anel correto
+        if (i == lastRingIndex + 1 &&
+            dist2 < threshold * threshold &&
+            !rings[i].passed)
         {
             movement = 0.25f;  // aumenta a velocidade
             lastRingIndex = i; // atualiza o último anel passado
+            rings[i].passed = true;
+            wrongRing = false; // libera novas mensagens
+
             printf("Velocidade Maxima atingida: %.2f\n", movement);
 
             if (i == NUM_RINGS - 1)
