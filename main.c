@@ -128,6 +128,8 @@ void drawGround()
 
     int repeat = 120; // número de repetições no X e Y
 
+    glColor3f(0.60f, 0.80f, 0.20f); // (154, 205, 50)
+
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 0.0f);
     glVertex3f(-250.0f, 0.0f, -250.0f);
@@ -177,6 +179,33 @@ void drawScenario()
     }
 }
 
+void drawPlayer()
+{
+    // distância do player à frente da câmera
+    float dist = 1.2f;
+
+    // vetor direção da câmera (igual ao usado no gluLookAt)
+    float dirX = cos(alpha) * sin(beta);
+    float dirY = sin(alpha);
+    float dirZ = -cos(alpha) * cos(beta);
+
+    // posição do player na frente da câmera
+    float px = camX + dirX * dist;
+    float py = camY + dirY * dist;
+    float pz = camZ + dirZ * dist;
+
+    glPushMatrix();
+    glTranslatef(px, py, pz);
+
+    // rotaciona o player conforme os ângulos da câmera por uma escala de 1.5
+    glRotatef(-beta * 180.0f / 3.14159f * 1.5f, 0, 1, 0);
+    glRotatef(alpha * 180.0f / 3.14159f * 1.5f, 1, 0, 0);
+    glColor3f(1.0f, 0.0f, 0.0f);
+    glScalef(1.0f, 1.0f, 1.5f);
+    glutSolidCube(0.2f);
+    glPopMatrix();
+}
+
 // principais
 void init(void)
 {
@@ -211,6 +240,7 @@ void display()
     drawGround();
     drawScenario();
     drawRings();
+    drawPlayer();
 
     // check de passagem nos aneis
     for (int i = 0; i < NUM_RINGS; i++)
