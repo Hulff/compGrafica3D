@@ -5,7 +5,7 @@ TARGET = game
 CC = gcc
 
 # Flags de compilação
-CFLAGS = -Wall -O2 -Iinclude
+CFLAGS = -Wall -g -O0 -Iinclude
 
 # Diretórios
 SRC_DIR = src

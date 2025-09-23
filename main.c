@@ -1,16 +1,14 @@
 
-#include <GL/freeglut.h>
-#include <stdbool.h>
 #include "menu.h"
-#include "storage.h"
-#include "shape.h"
 #include "config.h"
 #include "input.h"
+
+#include <GL/freeglut.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <time.h>
 
 #define SPEED 0.01f
@@ -47,6 +45,103 @@ const float frameDelay = 1.0f / fps; // segundos
 double lastTime = 0.0;
 bool wrongRing = false;
 // TODO adicionar iluminação
+
+//Carregar modelo
+
+typedef struct
+{
+    float x, y, z;
+} Vertex;
+
+typedef struct
+{
+    int v1, v2, v3;
+} Face;
+
+Vertex *vertices = NULL;
+Face *faces = NULL;
+int vertexCount = 0;
+int faceCount = 0;
+
+
+// Carrega OBJ simples (somente v e f)
+//TODO fazer carregar o objeto 
+void loadOBJ(const char *filename)
+{
+    FILE *file = fopen(filename, "r");
+    if (!file)
+    {
+        printf("Não foi possível abrir o arquivo: %s\n", filename);
+        return;
+    }
+
+    char line[128];
+    vertexCount = 0;
+    faceCount = 0;
+
+    // Primeiro passe: contar vértices e faces
+    while (fgets(line, sizeof(line), file))
+    {
+        if (strncmp(line, "v ", 2) == 0)
+            vertexCount++;
+        else if (strncmp(line, "f ", 2) == 0)
+            faceCount++;
+    }
+
+    vertices = (Vertex *)malloc(sizeof(Vertex) * vertexCount);
+    faces = (Face *)malloc(sizeof(Face) * faceCount);
+
+    fseek(file, 0, SEEK_SET);
+
+    int vi = 0, fi = 0;
+    while (fgets(line, sizeof(line), file))
+    {
+        if (strncmp(line, "v ", 2) == 0)
+        {
+            sscanf(line, "v %f %f %f", &vertices[vi].x, &vertices[vi].y, &vertices[vi].z);
+            vi++;
+        }
+        else if (strncmp(line, "f ", 2) == 0)
+        {
+            int v1, v2, v3;
+            sscanf(line, "f %d %d %d", &v1, &v2, &v3);
+            faces[fi].v1 = v1 - 1; // OBJ começa em 1
+            faces[fi].v2 = v2 - 1;
+            faces[fi].v3 = v3 - 1;
+            fi++;
+        }
+    }
+
+    fclose(file);
+    printf("OBJ carregado: %d vertices, %d faces\n", vertexCount, faceCount);
+}
+
+// Desenha OBJ
+void drawOBJ()
+{
+    if (!vertices || !faces)
+        return;
+
+    glBegin(GL_TRIANGLES);
+    for (int i = 0; i < faceCount; i++)
+    {
+        glVertex3f(vertices[faces[i].v1].x, vertices[faces[i].v1].y, vertices[faces[i].v1].z);
+        glVertex3f(vertices[faces[i].v2].x, vertices[faces[i].v2].y, vertices[faces[i].v2].z);
+        glVertex3f(vertices[faces[i].v3].x, vertices[faces[i].v3].y, vertices[faces[i].v3].z);
+    }
+    glEnd();
+}
+
+// Libera memória
+void freeOBJ()
+{
+    if (vertices)
+        free(vertices);
+    if (faces)
+        free(faces);
+    vertices = NULL;
+    faces = NULL;
+}
 
 //
 GLuint textureID;
@@ -128,7 +223,7 @@ void drawGround()
 
     int repeat = 120; // número de repetições no X e Y
 
-    glColor3f(0.60f, 0.80f, 0.20f); // (154, 205, 50)
+    glColor3f(1.0f, 1.0f, 1.0f); // branco para textura sem alteração de cor
 
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 0.0f);
@@ -182,7 +277,7 @@ void drawScenario()
 void drawPlayer()
 {
     // distância do player à frente da câmera
-    float dist = 1.2f;
+    float dist = 1.0f;
 
     // vetor direção da câmera (igual ao usado no gluLookAt)
     float dirX = cos(alpha) * sin(beta);
@@ -200,9 +295,21 @@ void drawPlayer()
     // rotaciona o player conforme os ângulos da câmera por uma escala de 1.5
     glRotatef(-beta * 180.0f / 3.14159f * 1.5f, 0, 1, 0);
     glRotatef(alpha * 180.0f / 3.14159f * 1.5f, 1, 0, 0);
+
     glColor3f(1.0f, 0.0f, 0.0f);
-    glScalef(1.0f, 1.0f, 1.5f);
+    glScalef(1.0f, 1.0f, 1.0f);
     glutSolidCube(0.2f);
+
+    // glColor3f(1.0f, 1.0f, 1.0f); // branco para textura sem alteração de cor
+    // if (vertices == NULL || faces == NULL || vertexCount == 0 || faceCount == 0)
+    // {
+    //     printf("Modelo ainda não carregado!\n");
+    //     glPopMatrix();
+    //     return;
+    // }
+
+    // drawOBJ(); // desenha o modelo 3D do avião
+
     glPopMatrix();
 }
 
@@ -219,6 +326,7 @@ void init(void)
     initBuildings();
     // carregar textura do chão (arquivo deve existir)
     groundTexture = loadTexture("textures/grass.jpg"); // coloque sua imagem "grass.jpg" na pasta do executável
+    loadOBJ("/home/hulff/repositorios/compGrafica3D/models/Jet_Lowpoly.obj"); // carregando modelo 3D do avião
 };
 
 void display()
@@ -241,6 +349,8 @@ void display()
     drawScenario();
     drawRings();
     drawPlayer();
+
+   
 
     // check de passagem nos aneis
     for (int i = 0; i < NUM_RINGS; i++)
@@ -335,7 +445,7 @@ int main(int argc, char **argv)
     }
 
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(windW, windH);
     glutInitWindowPosition(100, 100);
     glutCreateWindow("jogao 3D muito divertido merece 10");
@@ -348,10 +458,11 @@ int main(int argc, char **argv)
     glutMouseFunc(mouse);
     glutPassiveMotionFunc(mouseMove);
     glutMouseWheelFunc(mouseWheel);
-    programUI();
+    // programUI();
 
     glutIdleFunc(idle);
 
     glutMainLoop();
+    freeOBJ();
     return 0;
 }

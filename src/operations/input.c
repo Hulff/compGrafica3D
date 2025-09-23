@@ -6,10 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "shape.h"
-#include "storage.h"
 #include "menu.h"
 #include "config.h"
+#include "input.h"
 
 #define M_PI 3.14159265f
 
