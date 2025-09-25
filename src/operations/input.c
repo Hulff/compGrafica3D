@@ -16,6 +16,7 @@ extern float r, g, b;
 extern float alpha, beta, delta;
 extern float movement;         // movimento da câmera
 extern float camX, camY, camZ; // posição do jogador
+
 // extern float xpos, ypos; // posição da camera
 
 float mouseSensitivity = 0.3f; // ajuste entre 0.01 (muito lento) e 1.0 (rápido)
@@ -55,7 +56,7 @@ void resetStates()
     n_points = 0;            // reseta o numero de pontos
 }
 
-// movimentar para frente e para trás da camera/player
+// movimentar para frente e para trás da camera/cam
 //  função utilitária para calcular direção normalizada
 void getDirection(float a, float b, float *dx, float *dy, float *dz)
 {
@@ -131,6 +132,10 @@ void teclado(unsigned char key, int x, int y)
 
     glutPostRedisplay();
 }
+
+
+
+
 // ler as setas (sem uso ainda)
 void tecladoEspecial(int key, int x, int y)
 {

@@ -33,7 +33,8 @@ Structure buildings[NUM_BUILDINGS];
 // Definição das variáveis globais
 float r = 1.0f, g = 1.0f, b = 1.0f;
 float alpha = 0.0f, beta = 0.0f, delta = 1.0f; // ângulos de rotação e zoom
-float camX = 0, camY = 0, camZ = 0;            // posição do jogador
+float camX = 0, camY = 0, camZ = 0;            // posição da camera
+float playerX = 0, playerY = 0, playerZ = 0;   // posição do player
 
 float movement = 0.1f; // velocidade de movimento da câmera
 
@@ -46,101 +47,149 @@ double lastTime = 0.0;
 bool wrongRing = false;
 // TODO adicionar iluminação
 
-//Carregar modelo
-
+// utilziando assimp para importar o modelo 3D
+// Carregar modelo
 typedef struct
 {
     float x, y, z;
-} Vertex;
+} Vec3;
 
 typedef struct
 {
-    int v1, v2, v3;
+    float u, v;
+} Vec2;
+
+typedef struct
+{
+    int v[3];  // índices dos vértices
+    int vt[3]; // índices das texturas
+    int vn[3]; // índices das normais
 } Face;
 
-Vertex *vertices = NULL;
-Face *faces = NULL;
-int vertexCount = 0;
-int faceCount = 0;
+typedef struct
+{
+    Vec3 *vertices;
+    Vec3 *normals;
+    Vec2 *texcoords;
+    Face *faces;
+    size_t numVertices;
+    size_t numNormals;
+    size_t numTexcoords;
+    size_t numFaces;
+} OBJModel;
 
+OBJModel model = {0};
 
-// Carrega OBJ simples (somente v e f)
-//TODO fazer carregar o objeto 
-void loadOBJ(const char *filename)
+int loadOBJ(const char *filename, OBJModel *model)
 {
     FILE *file = fopen(filename, "r");
     if (!file)
     {
-        printf("Não foi possível abrir o arquivo: %s\n", filename);
-        return;
+        printf("Erro ao abrir arquivo: %s\n", filename);
+        return 0;
     }
 
     char line[128];
-    vertexCount = 0;
-    faceCount = 0;
 
-    // Primeiro passe: contar vértices e faces
+    // Contar primeiro para alocar memória
+    size_t vCount = 0, vnCount = 0, vtCount = 0, fCount = 0;
     while (fgets(line, sizeof(line), file))
     {
         if (strncmp(line, "v ", 2) == 0)
-            vertexCount++;
+            vCount++;
+        else if (strncmp(line, "vn ", 3) == 0)
+            vnCount++;
+        else if (strncmp(line, "vt ", 3) == 0)
+            vtCount++;
         else if (strncmp(line, "f ", 2) == 0)
-            faceCount++;
+            fCount++;
     }
 
-    vertices = (Vertex *)malloc(sizeof(Vertex) * vertexCount);
-    faces = (Face *)malloc(sizeof(Face) * faceCount);
+    model->vertices = malloc(sizeof(Vec3) * vCount);
+    model->normals = malloc(sizeof(Vec3) * vnCount);
+    model->texcoords = malloc(sizeof(Vec2) * vtCount);
+    model->faces = malloc(sizeof(Face) * fCount);
 
-    fseek(file, 0, SEEK_SET);
+    model->numVertices = vCount;
+    model->numNormals = vnCount;
+    model->numTexcoords = vtCount;
+    model->numFaces = fCount;
 
-    int vi = 0, fi = 0;
+    rewind(file);
+
+    size_t vi = 0, vti = 0, vni = 0, fi = 0;
     while (fgets(line, sizeof(line), file))
     {
         if (strncmp(line, "v ", 2) == 0)
         {
-            sscanf(line, "v %f %f %f", &vertices[vi].x, &vertices[vi].y, &vertices[vi].z);
+            sscanf(line, "v %f %f %f",
+                   &model->vertices[vi].x,
+                   &model->vertices[vi].y,
+                   &model->vertices[vi].z);
             vi++;
+        }
+        else if (strncmp(line, "vn ", 3) == 0)
+        {
+            sscanf(line, "vn %f %f %f",
+                   &model->normals[vni].x,
+                   &model->normals[vni].y,
+                   &model->normals[vni].z);
+            vni++;
+        }
+        else if (strncmp(line, "vt ", 3) == 0)
+        {
+            sscanf(line, "vt %f %f",
+                   &model->texcoords[vti].u,
+                   &model->texcoords[vti].v);
+            vti++;
         }
         else if (strncmp(line, "f ", 2) == 0)
         {
-            int v1, v2, v3;
-            sscanf(line, "f %d %d %d", &v1, &v2, &v3);
-            faces[fi].v1 = v1 - 1; // OBJ começa em 1
-            faces[fi].v2 = v2 - 1;
-            faces[fi].v3 = v3 - 1;
-            fi++;
+            Face face;
+            int matches = sscanf(line, "f %d/%d/%d %d/%d/%d %d/%d/%d",
+                                 &face.v[0], &face.vt[0], &face.vn[0],
+                                 &face.v[1], &face.vt[1], &face.vn[1],
+                                 &face.v[2], &face.vt[2], &face.vn[2]);
+            if (matches != 9)
+            {
+                printf("Erro: formato de face não suportado\n");
+                fclose(file);
+                return 0;
+            }
+            for (int i = 0; i < 3; i++)
+            {
+                face.v[i]--; // OBJ indices começam em 1
+                face.vt[i]--;
+                face.vn[i]--;
+            }
+            model->faces[fi++] = face;
         }
     }
 
     fclose(file);
-    printf("OBJ carregado: %d vertices, %d faces\n", vertexCount, faceCount);
+    return 1;
 }
-
-// Desenha OBJ
-void drawOBJ()
+void drawOBJ(OBJModel *model)
 {
-    if (!vertices || !faces)
-        return;
-
     glBegin(GL_TRIANGLES);
-    for (int i = 0; i < faceCount; i++)
+    for (size_t i = 0; i < model->numFaces; i++)
     {
-        glVertex3f(vertices[faces[i].v1].x, vertices[faces[i].v1].y, vertices[faces[i].v1].z);
-        glVertex3f(vertices[faces[i].v2].x, vertices[faces[i].v2].y, vertices[faces[i].v2].z);
-        glVertex3f(vertices[faces[i].v3].x, vertices[faces[i].v3].y, vertices[faces[i].v3].z);
+        Face f = model->faces[i];
+        for (int j = 0; j < 3; j++)
+        {
+            if (model->numNormals > 0)
+                glNormal3f(model->normals[f.vn[j]].x,
+                           model->normals[f.vn[j]].y,
+                           model->normals[f.vn[j]].z);
+            if (model->numTexcoords > 0)
+                glTexCoord2f(model->texcoords[f.vt[j]].u,
+                             model->texcoords[f.vt[j]].v);
+            glVertex3f(model->vertices[f.v[j]].x,
+                       model->vertices[f.v[j]].y,
+                       model->vertices[f.v[j]].z);
+        }
     }
     glEnd();
-}
-
-// Libera memória
-void freeOBJ()
-{
-    if (vertices)
-        free(vertices);
-    if (faces)
-        free(faces);
-    vertices = NULL;
-    faces = NULL;
 }
 
 //
@@ -276,39 +325,20 @@ void drawScenario()
 
 void drawPlayer()
 {
-    // distância do player à frente da câmera
-    float dist = 1.0f;
-
-    // vetor direção da câmera (igual ao usado no gluLookAt)
-    float dirX = cos(alpha) * sin(beta);
-    float dirY = sin(alpha);
-    float dirZ = -cos(alpha) * cos(beta);
-
-    // posição do player na frente da câmera
-    float px = camX + dirX * dist;
-    float py = camY + dirY * dist;
-    float pz = camZ + dirZ * dist;
-
     glPushMatrix();
-    glTranslatef(px, py, pz);
 
-    // rotaciona o player conforme os ângulos da câmera por uma escala de 1.5
-    glRotatef(-beta * 180.0f / 3.14159f * 1.5f, 0, 1, 0);
-    glRotatef(alpha * 180.0f / 3.14159f * 1.5f, 1, 0, 0);
+    // player desenhado na posição do mundo
+    glTranslatef(camX, camY,camZ-5.0f);
+
+    // rotaciona o player conforme a direção que ele olha
+    glRotatef(180.0f, 0.0f, 1.0f, 0.0f); // virar modelo, se necessário
+    glRotatef(-beta * 180.0f / 3.14159f, 0, 1, 0);
+    glRotatef(-alpha * 180.0f / 3.14159f, 1, 0, 0);
 
     glColor3f(1.0f, 0.0f, 0.0f);
-    glScalef(1.0f, 1.0f, 1.0f);
-    glutSolidCube(0.2f);
+    glScalef(0.3f, 0.3f, 0.3f);
 
-    // glColor3f(1.0f, 1.0f, 1.0f); // branco para textura sem alteração de cor
-    // if (vertices == NULL || faces == NULL || vertexCount == 0 || faceCount == 0)
-    // {
-    //     printf("Modelo ainda não carregado!\n");
-    //     glPopMatrix();
-    //     return;
-    // }
-
-    // drawOBJ(); // desenha o modelo 3D do avião
+    drawOBJ(&model);
 
     glPopMatrix();
 }
@@ -326,7 +356,7 @@ void init(void)
     initBuildings();
     // carregar textura do chão (arquivo deve existir)
     groundTexture = loadTexture("textures/grass.jpg"); // coloque sua imagem "grass.jpg" na pasta do executável
-    loadOBJ("/home/hulff/repositorios/compGrafica3D/models/Jet_Lowpoly.obj"); // carregando modelo 3D do avião
+    loadOBJ("models/Jet_Lowpoly.obj", &model);         // coloque seu modelo "Jet_Lowpoly.obj" na pasta do executável
 };
 
 void display()
@@ -345,12 +375,12 @@ void display()
               camX + dirX, camY + dirY, camZ + dirZ,
               0, 1, 0);
 
+    glPushMatrix();
     drawGround();
     drawScenario();
     drawRings();
+    glPopMatrix();
     drawPlayer();
-
-   
 
     // check de passagem nos aneis
     for (int i = 0; i < NUM_RINGS; i++)
@@ -463,6 +493,5 @@ int main(int argc, char **argv)
     glutIdleFunc(idle);
 
     glutMainLoop();
-    freeOBJ();
     return 0;
 }
