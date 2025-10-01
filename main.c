@@ -12,7 +12,7 @@
 #include <time.h>
 
 #define SPEED 0.01f
-#define NUM_RINGS 20
+#define NUM_RINGS 10
 #define NUM_BUILDINGS 20
 
 // texturas
@@ -44,6 +44,7 @@ int lastRingIndex = -1; // índice do último anel passado
 const float fps = 60.0f;
 const float frameDelay = 1.0f / fps; // segundos
 double lastTime = 0.0;
+static double startTime = 0;
 bool wrongRing = false;
 // TODO adicionar iluminação
 
@@ -327,13 +328,38 @@ void drawPlayer()
 {
     glPushMatrix();
 
-    // player desenhado na posição do mundo
-    glTranslatef(camX, camY,camZ-5.0f);
+    float dirX = cosf(alpha) * sinf(beta);
+    float dirY = sinf(alpha);
+    float dirZ = -cosf(alpha) * cosf(beta);
 
-    // rotaciona o player conforme a direção que ele olha
-    glRotatef(180.0f, 0.0f, 1.0f, 0.0f); // virar modelo, se necessário
-    glRotatef(-beta * 180.0f / 3.14159f, 0, 1, 0);
-    glRotatef(-alpha * 180.0f / 3.14159f, 1, 0, 0);
+    float distance = 4.0f; // distância à frente da câmera
+    float px = camX + dirX * distance;
+    float py = camY + dirY * distance;
+    float pz = camZ + dirZ * distance;
+
+    glTranslatef(px, py, pz);
+    float adjustmentFactor = 1.4f; // fator para ajustar a rotação do modelo
+
+    glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
+    glRotatef(-10.0f, 1.0f, 0.0f, 0.0f);
+
+    float yRotation = (-beta * 180.0f / 3.14159f);
+   
+    glRotatef(yRotation, 0, 1, 0);
+
+    float xRotation = (-alpha * 180.0f / 3.14159f) * adjustmentFactor;
+    if (xRotation > 40)
+        xRotation = 40;
+    if (xRotation < -20)
+        xRotation = -20;
+    glRotatef(xRotation, 1, 0, 0);
+
+    float roll = (beta * 180.0f / 3.14159f);
+    if(roll > 30) roll = 30;
+    if(roll < -30) roll = -30;
+    glRotatef(roll * adjustmentFactor, 0, 0, 1);
+    
+    
 
     glColor3f(1.0f, 0.0f, 0.0f);
     glScalef(0.3f, 0.3f, 0.3f);
@@ -420,10 +446,13 @@ void display()
             if (i == NUM_RINGS - 1)
             {
                 printf("Voce passou por todos os aneis! Parabens!\n");
+              
+                printf("Tempo levado: %.2f segundos\n", getTime() - startTime);
             }
             else
             {
                 printf("Aneis restantes: %d\n", NUM_RINGS - i - 1);
+                printf("Tempo decorrido: %.2f segundos\n", getTime() - startTime);
             }
         }
     }
