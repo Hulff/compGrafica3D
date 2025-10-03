@@ -35,6 +35,13 @@ float r = 1.0f, g = 1.0f, b = 1.0f;
 float alpha = 0.0f, beta = 0.0f, delta = 1.0f; // ângulos de rotação e zoom
 float camX = 0, camY = 0, camZ = 0;            // posição da camera
 float playerX = 0, playerY = 0, playerZ = 0;   // posição do player
+bool timerRunning = false; // inicia como false, só roda depois do countdown
+double lastElapsed = 0.0; // guarda o último tempo decorrido quando o cronômetro para
+double countdownStart = 0;   // momento em que o countdown começou
+double countdownTime = 3.0;  // duração do countdown em segundos
+bool countdownFinished = false;
+bool canMove = false; // false enquanto o countdown não terminar
+
 
 float movement = 0.1f; // velocidade de movimento da câmera
 
@@ -261,6 +268,8 @@ void drawGround()
     glPushMatrix();
     glTranslatef(0.0f, -2.0f, 0.0f);
 
+    glDisable(GL_LIGHTING);
+
     if (groundTexture != 0)
     {
         glEnable(GL_TEXTURE_2D);
@@ -276,15 +285,14 @@ void drawGround()
     glColor3f(1.0f, 1.0f, 1.0f); // branco para textura sem alteração de cor
 
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f);
-    glVertex3f(-250.0f, 0.0f, -250.0f);
-    glTexCoord2f(repeat, 0.0f);
-    glVertex3f(250.0f, 0.0f, -250.0f);
-    glTexCoord2f(repeat, repeat);
-    glVertex3f(250.0f, 0.0f, 250.0f);
-    glTexCoord2f(0.0f, repeat);
-    glVertex3f(-250.0f, 0.0f, 250.0f);
-
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex3f(-250.0f, 0.0f, -250.0f);
+        glTexCoord2f(repeat, 0.0f);
+        glVertex3f(250.0f, 0.0f, -250.0f);
+        glTexCoord2f(repeat, repeat);
+        glVertex3f(250.0f, 0.0f, 250.0f);
+        glTexCoord2f(0.0f, repeat);
+        glVertex3f(-250.0f, 0.0f, 250.0f);
     glEnd();
 
     if (groundTexture != 0)
@@ -293,6 +301,8 @@ void drawGround()
         glDisable(GL_TEXTURE_2D);
     }
 
+    glEnable(GL_LIGHTING);
+
     glPopMatrix();
 }
 
@@ -300,13 +310,16 @@ void drawRings()
 {
     for (int i = 0; i < NUM_RINGS; i++)
     {
-        {
-            glPushMatrix();
-            glTranslatef(rings[i].x, rings[i].y, rings[i].z);
-            glColor3f(0.5, 0.5, 1.0);
-            glutSolidTorus(0.05, 1.0, 20, 60);
-            glPopMatrix();
-        }
+        glPushMatrix();
+        glTranslatef(rings[i].x, rings[i].y, rings[i].z);
+
+        if (i == lastRingIndex + 1 && !rings[i].passed)
+            glColor3f(1.0, 1.0, 0.0); // amarelo para o próximo anel
+        else
+            glColor3f(0.5, 0.5, 1.0); // azul para os demais
+
+        glutSolidTorus(0.05, 1.0, 20, 60);
+        glPopMatrix();
     }
 }
 
@@ -374,6 +387,30 @@ void init(void)
 {
     glClearColor(r, g, b, 0);
     glEnable(GL_DEPTH_TEST);
+
+    // === iluminação ===
+    glEnable(GL_LIGHTING);       // habilita sistema de luz
+    glEnable(GL_LIGHT0);         // ativa a luz 0
+    glEnable(GL_COLOR_MATERIAL); // deixa glColor influenciar material
+
+    // parâmetros da luz
+    GLfloat lightPos[]     = { 0.0f, 10.0f, 5.0f, 1.0f }; // posição (w=1 → pontual)
+    GLfloat lightAmbient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+    GLfloat lightDiffuse[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+    GLfloat lightSpecular[]= { 1.0f, 1.0f, 1.0f, 1.0f };
+
+    glLightfv(GL_LIGHT0, GL_AMBIENT,  lightAmbient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE,  lightDiffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular);
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+
+    // material básico (pra objetos brilharem com especular)
+    GLfloat mat_specular[]  = { 1.0, 1.0, 1.0, 1.0 };
+    GLfloat mat_shininess[] = { 50.0 };
+    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+    // === fim iluminação ===
+
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(60.0, (float)windW / windH, 0.1, 100.0);
@@ -383,6 +420,13 @@ void init(void)
     // carregar textura do chão (arquivo deve existir)
     groundTexture = loadTexture("textures/grass.jpg"); // coloque sua imagem "grass.jpg" na pasta do executável
     loadOBJ("models/Jet_Lowpoly.obj", &model);         // coloque seu modelo "Jet_Lowpoly.obj" na pasta do executável
+
+    //Countdown
+    startTime = getTime();       // marca o início do tempo total
+    countdownStart = getTime();  // marca o início do countdown
+    countdownFinished = false;
+
+
 };
 
 void display()
@@ -400,6 +444,9 @@ void display()
     gluLookAt(camX, camY, camZ,
               camX + dirX, camY + dirY, camZ + dirZ,
               0, 1, 0);
+    
+    GLfloat lightPos[] = { 0.0f, 20.0f, 20.0f, 1.0f };
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
     glPushMatrix();
     drawGround();
@@ -446,8 +493,8 @@ void display()
             if (i == NUM_RINGS - 1)
             {
                 printf("Voce passou por todos os aneis! Parabens!\n");
-              
                 printf("Tempo levado: %.2f segundos\n", getTime() - startTime);
+                timerRunning = false;
             }
             else
             {
@@ -457,7 +504,85 @@ void display()
         }
     }
 
+    // countdown e cronômetro
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, windW, 0, windH);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+
+    char buffer[64];
+    double currentTime = getTime();
+
+    if (!countdownFinished)
+    {
+        double remaining = countdownTime - (currentTime - countdownStart);
+        if (remaining <= 0.0)
+        {
+            countdownFinished = true;
+            startTime = getTime();
+            timerRunning = true;
+            canMove = true;
+            remaining = 0.0;
+        }
+
+        sprintf(buffer, "Comecando em: %.0f", ceil(remaining));
+    }
+    else
+    {
+        double elapsed = timerRunning ? (currentTime - startTime) : (lastElapsed);
+        lastElapsed = elapsed; // salvar último tempo caso cronômetro tenha parado
+        sprintf(buffer, "Tempo: %.2f s", elapsed);
+    }
+
+    // calcular tamanho do fundo baseado no comprimento do texto
+    int len = strlen(buffer);
+    float charWidth = 10.0f;
+    float x = 5, y = windH - 30;
+    float w = len * charWidth, h = 25;
+
+    // fundo preto atrás do texto
+    glColor3f(0.0f, 0.0f, 0.0f);
+    glBegin(GL_QUADS);
+        glVertex2f(x, y);
+        glVertex2f(x + w, y);
+        glVertex2f(x + w, y + h);
+        glVertex2f(x, y + h);
+    glEnd();
+
+    // desenhar texto em branco
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glRasterPos2f(x + 5, y + 5);
+    for (int i = 0; buffer[i] != '\0'; i++)
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, buffer[i]);
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+
+
+
     glutSwapBuffers();
+}
+
+
+void drawText(float x, float y, const char *text)
+{
+    glRasterPos2f(x, y); // posição em coordenadas de tela (0..1)
+    for (int i = 0; text[i] != '\0'; i++)
+    {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, text[i]);
+    }
 }
 
 void idle()

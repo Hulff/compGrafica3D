@@ -16,10 +16,12 @@ extern float r, g, b;
 extern float alpha, beta, delta;
 extern float movement;         // movimento da câmera
 extern float camX, camY, camZ; // posição do jogador
+extern bool canMove;
+extern bool countdownFinished;
 
 // extern float xpos, ypos; // posição da camera
 
-float mouseSensitivity = 0.3f; // ajuste entre 0.01 (muito lento) e 1.0 (rápido)
+float mouseSensitivity = 0.5f; // ajuste entre 0.01 (muito lento) e 1.0 (rápido)
 
 typedef enum
 {
@@ -107,8 +109,6 @@ void moveRight()
 // ler teclado
 void teclado(unsigned char key, int x, int y)
 {
-    // printf("Tecla: %c\n", key);
-
     switch (key)
     {
     case 'b':
@@ -117,21 +117,22 @@ void teclado(unsigned char key, int x, int y)
         b = 0;
         break;
     case 'w':
-        moveForward();
+        if (canMove) moveForward();
         break;
     case 's':
-        moveBackwards();
+        if (canMove) moveBackwards();
         break;
     case 'a':
-        moveLeft();
+        if (canMove) moveLeft();
         break;
     case 'd':
-        moveRight();
+        if (canMove) moveRight();
         break;
     }
 
     glutPostRedisplay();
 }
+
 
 
 
