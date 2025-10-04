@@ -730,7 +730,7 @@ void idle()
                 printf("Velocidade Restaurada \n");
             }
         }
-
+        glutPostRedisplay();//garante que a tela será redesenhada a cada frame assim o relogio funciona corretamente
         lastTime = currentTime;
     }
 }
