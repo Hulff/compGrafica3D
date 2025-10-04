@@ -14,6 +14,8 @@
 #define SPEED 0.01f
 #define NUM_RINGS 10
 #define NUM_BUILDINGS 20
+#define GROUND_Y    (-4.75f)
+#define PLANE_HALF  0.6f
 
 // texturas
 #define STB_IMAGE_IMPLEMENTATION
@@ -33,7 +35,7 @@ Structure buildings[NUM_BUILDINGS];
 // Definição das variáveis globais
 float r = 1.0f, g = 1.0f, b = 1.0f;
 float alpha = 0.0f, beta = 0.0f, delta = 1.0f; // ângulos de rotação e zoom
-float camX = 0, camY = 0, camZ = 0;            // posição da camera
+float camX = 0, camY = 5.0f, camZ = 0;            // posição da camera
 float playerX = 0, playerY = 0, playerZ = 0;   // posição do player
 bool timerRunning = false; // inicia como false, só roda depois do countdown
 double lastElapsed = 0.0; // guarda o último tempo decorrido quando o cronômetro para
@@ -241,6 +243,51 @@ double getTime()
     return (double)clock() / CLOCKS_PER_SEC;
 }
 
+// checa interseção de duas AABB
+static bool aabb_intersect(float axMin, float axMax, float ayMin, float ayMax, float azMin, float azMax,
+                           float bxMin, float bxMax, float byMin, float byMax, float bzMin, float bzMax)
+{
+    return (axMin <= bxMax && axMax >= bxMin) &&
+           (ayMin <= byMax && ayMax >= byMin) &&
+           (azMin <= bzMax && azMax >= bzMin);
+}
+
+// colisão avião ↔ chão
+bool checkCollisionWithGround(float py, float halfPlane)
+{
+    float planeBottom = py - halfPlane;
+    return (planeBottom <= GROUND_Y);
+}
+
+// colisão avião ↔ prédio[i]
+bool checkCollisionWithBuildingIndex(int i, float px, float py, float pz, float halfPlane)
+{
+    float width  = 1.0f * 1.2f;               // X (você escalou 1.2 no drawScenario)
+    float height = 1.0f * scaleFactors[i];    // Y
+    float depth  = 1.0f * 1.0f;               // Z
+
+    float bx = buildings[i].x;
+    float by = -2.0f; // centro Y do cubo (usado no translatef)
+    float bz = buildings[i].z;
+
+    float bxMin = bx - width / 2.0f;
+    float bxMax = bx + width / 2.0f;
+    float bzMin = bz - depth / 2.0f;
+    float bzMax = bz + depth / 2.0f;
+    float byMin = by - height / 2.0f;
+    float byMax = by + height / 2.0f;
+
+    float axMin = px - halfPlane;
+    float axMax = px + halfPlane;
+    float azMin = pz - halfPlane;
+    float azMax = pz + halfPlane;
+    float ayMin = py - halfPlane;
+    float ayMax = py + halfPlane;
+
+    return aabb_intersect(axMin, axMax, ayMin, ayMax, azMin, azMax,
+                          bxMin, bxMax, byMin, byMax, bzMin, bzMax);
+}
+
 // auxiliares
 void initRings()
 {
@@ -285,15 +332,12 @@ void drawGround()
     glColor3f(1.0f, 1.0f, 1.0f); // branco para textura sem alteração de cor
 
     glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 0.0f);
-        glVertex3f(-250.0f, 0.0f, -250.0f);
-        glTexCoord2f(repeat, 0.0f);
-        glVertex3f(250.0f, 0.0f, -250.0f);
-        glTexCoord2f(repeat, repeat);
-        glVertex3f(250.0f, 0.0f, 250.0f);
-        glTexCoord2f(0.0f, repeat);
-        glVertex3f(-250.0f, 0.0f, 250.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-250.0f, 0.0f,  250.0f);
+        glTexCoord2f(repeat, 0.0f); glVertex3f( 250.0f, 0.0f,  250.0f);
+        glTexCoord2f(repeat, repeat); glVertex3f( 250.0f, 0.0f, -250.0f);
+        glTexCoord2f(0.0f, repeat); glVertex3f(-250.0f, 0.0f, -250.0f);
     glEnd();
+
 
     if (groundTexture != 0)
     {
@@ -350,6 +394,12 @@ void drawPlayer()
     float py = camY + dirY * distance;
     float pz = camZ + dirZ * distance;
 
+    // atualiza a posição global do avião para colisão
+    playerX = px;
+    playerY = py;
+    playerZ = pz;
+
+
     glTranslatef(px, py, pz);
     float adjustmentFactor = 1.4f; // fator para ajustar a rotação do modelo
 
@@ -392,6 +442,8 @@ void init(void)
     glEnable(GL_LIGHTING);       // habilita sistema de luz
     glEnable(GL_LIGHT0);         // ativa a luz 0
     glEnable(GL_COLOR_MATERIAL); // deixa glColor influenciar material
+    glEnable(GL_CULL_FACE); // ativa backface culling (desenha só faces visíveis)
+    glFrontFace(GL_CCW); // frente = anti-horário (padrão)
 
     // parâmetros da luz
     GLfloat lightPos[]     = { 0.0f, 10.0f, 5.0f, 1.0f }; // posição (w=1 → pontual)
@@ -426,6 +478,7 @@ void init(void)
     countdownStart = getTime();  // marca o início do countdown
     countdownFinished = false;
 
+    glCullFace(GL_BACK);
 
 };
 
@@ -454,6 +507,22 @@ void display()
     drawRings();
     glPopMatrix();
     drawPlayer();
+
+    if (checkCollisionWithGround(playerY, PLANE_HALF)) {
+        printf("Colisão com o chão\n");
+        printf("playerY=%.2f, bottom=%.2f, ground=%.2f\n", playerY, playerY - PLANE_HALF, GROUND_Y);
+        movement = 0.0f;       // trava movimento
+        timerRunning = false;  // opcional: para o cronômetro
+    }
+
+    for (int i = 0; i < NUM_BUILDINGS; i++) {
+        if (checkCollisionWithBuildingIndex(i, playerX, playerY, playerZ, PLANE_HALF)) {
+            printf("Colisão com prédio %d\n", i);
+            movement = 0.0f;
+            timerRunning = false;
+            break; // já basta detectar uma
+        }
+    }
 
     // check de passagem nos aneis
     for (int i = 0; i < NUM_RINGS; i++)
