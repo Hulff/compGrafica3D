@@ -43,7 +43,7 @@ double countdownStart = 0;   // momento em que o countdown começou
 double countdownTime = 3.0;  // duração do countdown em segundos
 bool countdownFinished = false;
 bool canMove = false; // false enquanto o countdown não terminar
-
+int lockMouseControl = 0; // toggle do controle via mouse
 
 float movement = 0.1f; // velocidade de movimento da câmera
 
@@ -580,6 +580,7 @@ void display()
             collided = true;
             movement = 0.0f;
             timerRunning = false;
+            lockMouseControl = 0; // trava o controle do mouse
             break;
         }
     }
@@ -701,7 +702,6 @@ void display()
 
     glutSwapBuffers();
 }
-
 
 void drawText(float x, float y, const char *text)
 {

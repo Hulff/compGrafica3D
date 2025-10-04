@@ -38,7 +38,7 @@ typedef enum
 } Operation;
 
 int n_points = 0;         // número de pontos criados
-int lockMouseControl = 0; // trava o controle do mouse
+extern int lockMouseControl;
 
 Operation currentOperation; // guarda qual operação está sendo feita
 
