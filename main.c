@@ -13,9 +13,9 @@
 
 #define SPEED 0.01f
 #define NUM_RINGS 10
-#define NUM_BUILDINGS 20
+#define NUM_BUILDINGS 100
 #define GROUND_Y    (-4.75f)
-#define PLANE_HALF  0.6f
+#define PLANE_HALF  0.005f
 
 // texturas
 #define STB_IMAGE_IMPLEMENTATION
@@ -307,13 +307,15 @@ void initRings()
 
 void initBuildings()
 {
+    float zStart = -100.0f;   // ponto inicial na frente do jogador
+    float zEnd   = 0.0f;  // ponto final da área de prédios
     for (int i = 0; i < NUM_BUILDINGS; i++)
     {
-        buildings[i].x = (rand() % 20 - 10) / 2.0f;
-        buildings[i].z = -(float)(i + 1) * 7.0f;
+        buildings[i].x = (rand() % 40 - 20) / 2.0f;              // X aleatório
+        buildings[i].z = zStart + (rand() % (int)(zEnd - zStart)); // Z aleatório dentro da faixa
         buildings[i].y = 0.0f;
 
-        scaleFactors[i] = 5.0f + (rand() % 11); // fator de escala aleatório entre 2  e 5
+        scaleFactors[i] = 5.0f + (rand() % 11); // altura aleatória
     }
 }
 
@@ -446,7 +448,7 @@ void drawPlayer()
     float dirY = sinf(alpha);
     float dirZ = -cosf(alpha) * cosf(beta);
 
-    float distance = 4.0f; // distância à frente da câmera
+    float distance = 1.5f; // distância à frente da câmera
     float px = camX + dirX * distance;
     float py = camY + dirY * distance;
     float pz = camZ + dirZ * distance;
@@ -482,7 +484,7 @@ void drawPlayer()
     
 
     glColor3f(1.0f, 0.0f, 0.0f);
-    glScalef(0.3f, 0.3f, 0.3f);
+    glScalef(0.1f, 0.1f, 0.1f);
 
     drawOBJ(&model);
 
@@ -565,23 +567,23 @@ void display()
     glPopMatrix();
     drawPlayer();
 
+    bool collided = false;
+
     if (checkCollisionWithGround(playerY, PLANE_HALF)) {
-        printf("Colisão com o chão\n");
-        printf("playerY=%.2f, bottom=%.2f, ground=%.2f\n", playerY, playerY - PLANE_HALF, GROUND_Y);
-        movement = 0.0f;       // trava movimento
-        timerRunning = false;  // opcional: para o cronômetro
+        collided = true;
+        movement = 0.0f;
+        timerRunning = false;
     }
 
     for (int i = 0; i < NUM_BUILDINGS; i++) {
         if (checkCollisionWithBuildingIndex(i, playerX, playerY, playerZ, PLANE_HALF)) {
-            printf("Colisão com prédio %d\n", i);
+            collided = true;
             movement = 0.0f;
             timerRunning = false;
-            break; // já basta detectar uma
+            break;
         }
     }
 
-    // check de passagem nos aneis
     for (int i = 0; i < NUM_RINGS; i++)
     {
         float dx = camX - rings[i].x;
@@ -589,48 +591,28 @@ void display()
         float dz = camZ - rings[i].z;
         float dist2 = dx * dx + dy * dy + dz * dz;
 
-        float threshold = 2.0f; // distância para considerar que passou pelo anel
+        float threshold = 2.0f;
 
-        // se tentou passar fora de ordem
         if (i != lastRingIndex + 1 && i != lastRingIndex &&
             dist2 < threshold * threshold &&
             !rings[i].passed && !wrongRing)
         {
-            movement = 0.1f; // reduz a velocidade
-            printf("Passe pelo anel %d antes de passar pelo anel %d\n",
-                   lastRingIndex + 2, i + 1);
-
-            wrongRing = true; // trava até acertar o próximo
+            movement = 0.1f;
+            wrongRing = true;
             continue;
         }
 
-        // se passou pelo anel correto
         if (i == lastRingIndex + 1 &&
             dist2 < threshold * threshold &&
             !rings[i].passed)
         {
-            movement = 0.25f;  // aumenta a velocidade
-            lastRingIndex = i; // atualiza o último anel passado
+            movement = 0.25f;
+            lastRingIndex = i;
             rings[i].passed = true;
-            wrongRing = false; // libera novas mensagens
-
-            printf("Velocidade Maxima atingida: %.2f\n", movement);
-
-            if (i == NUM_RINGS - 1)
-            {
-                printf("Voce passou por todos os aneis! Parabens!\n");
-                printf("Tempo levado: %.2f segundos\n", getTime() - startTime);
-                timerRunning = false;
-            }
-            else
-            {
-                printf("Aneis restantes: %d\n", NUM_RINGS - i - 1);
-                printf("Tempo decorrido: %.2f segundos\n", getTime() - startTime);
-            }
+            wrongRing = false;
         }
     }
 
-    // countdown e cronômetro
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -643,50 +625,71 @@ void display()
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
 
-    char buffer[64];
-    double currentTime = getTime();
-
-    if (!countdownFinished)
+    if (!collided)
     {
-        double remaining = countdownTime - (currentTime - countdownStart);
-        if (remaining <= 0.0)
+        char buffer[64];
+        double currentTime = getTime();
+        if (!countdownFinished)
         {
-            countdownFinished = true;
-            startTime = getTime();
-            timerRunning = true;
-            canMove = true;
-            remaining = 0.0;
+            double remaining = countdownTime - (currentTime - countdownStart);
+            if (remaining <= 0.0)
+            {
+                countdownFinished = true;
+                startTime = getTime();
+                timerRunning = true;
+                canMove = true;
+                remaining = 0.0;
+            }
+            sprintf(buffer, "Comecando em: %.0f", ceil(remaining));
+        }
+        else
+        {
+            double elapsed = timerRunning ? (currentTime - startTime) : (lastElapsed);
+            lastElapsed = elapsed;
+            sprintf(buffer, "Tempo: %.2f s", elapsed);
         }
 
-        sprintf(buffer, "Comecando em: %.0f", ceil(remaining));
+        int len = strlen(buffer);
+        float charWidth = 10.0f;
+        float x = 5, y = windH - 30;
+        float w = len * charWidth, h = 25;
+
+        glColor3f(0.0f, 0.0f, 0.0f);
+        glBegin(GL_QUADS);
+            glVertex2f(x, y);
+            glVertex2f(x + w, y);
+            glVertex2f(x + w, y + h);
+            glVertex2f(x, y + h);
+        glEnd();
+
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glRasterPos2f(x + 5, y + 5);
+        for (int i = 0; buffer[i] != '\0'; i++)
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, buffer[i]);
     }
-    else
+
+    if (collided)
     {
-        double elapsed = timerRunning ? (currentTime - startTime) : (lastElapsed);
-        lastElapsed = elapsed; // salvar último tempo caso cronômetro tenha parado
-        sprintf(buffer, "Tempo: %.2f s", elapsed);
+        const char* msg = "APERTE R PARA REINICIAR";
+        int len = strlen(msg);
+        float charWidth = 10.0f;
+        float x = (windW - len * charWidth) / 2.0f;
+        float y = windH / 2.0f;
+        float w = len * charWidth, h = 25;
+
+        glColor3f(0.0f, 0.0f, 0.0f);
+        glBegin(GL_QUADS);
+            glVertex2f(x, y);
+            glVertex2f(x + w, y);
+            glVertex2f(x + w, y + h);
+            glVertex2f(x, y + h);
+        glEnd();
+
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glRasterPos2f(x + 5, y + 5);
+        for (int i = 0; msg[i] != '\0'; i++)
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, msg[i]);
     }
-
-    // calcular tamanho do fundo baseado no comprimento do texto
-    int len = strlen(buffer);
-    float charWidth = 10.0f;
-    float x = 5, y = windH - 30;
-    float w = len * charWidth, h = 25;
-
-    // fundo preto atrás do texto
-    glColor3f(0.0f, 0.0f, 0.0f);
-    glBegin(GL_QUADS);
-        glVertex2f(x, y);
-        glVertex2f(x + w, y);
-        glVertex2f(x + w, y + h);
-        glVertex2f(x, y + h);
-    glEnd();
-
-    // desenhar texto em branco
-    glColor3f(1.0f, 1.0f, 1.0f);
-    glRasterPos2f(x + 5, y + 5);
-    for (int i = 0; buffer[i] != '\0'; i++)
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, buffer[i]);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
@@ -695,8 +698,6 @@ void display()
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
-
-
 
     glutSwapBuffers();
 }
