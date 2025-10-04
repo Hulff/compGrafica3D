@@ -57,7 +57,7 @@ static double startTime = 0;
 bool wrongRing = false;
 // TODO adicionar iluminação
 
-// utilziando assimp para importar o modelo 3D
+// importar o modelo 3D
 // Carregar modelo
 typedef struct
 {
@@ -71,9 +71,9 @@ typedef struct
 
 typedef struct
 {
-    int v[3];  // índices dos vértices
-    int vt[3]; // índices das texturas
-    int vn[3]; // índices das normais
+    int v[3];  // índices de vértices
+    int vt[3]; // índices de texcoords (ou -1)
+    int vn[3]; // índices de normais  (ou -1)
 } Face;
 
 typedef struct
@@ -99,9 +99,9 @@ int loadOBJ(const char *filename, OBJModel *model)
         return 0;
     }
 
-    char line[128];
+    char line[512];
 
-    // Contar primeiro para alocar memória
+    // --- Primeiro passe: contar elementos ---
     size_t vCount = 0, vnCount = 0, vtCount = 0, fCount = 0;
     while (fgets(line, sizeof(line), file))
     {
@@ -112,9 +112,18 @@ int loadOBJ(const char *filename, OBJModel *model)
         else if (strncmp(line, "vt ", 3) == 0)
             vtCount++;
         else if (strncmp(line, "f ", 2) == 0)
-            fCount++;
+        {
+            // Conta faces aproximado (cada polígono vira N-2 triângulos)
+            int tokens = 0;
+            for (char *p = line; *p; p++)
+                if (*p == ' ')
+                    tokens++;
+            if (tokens >= 3)
+                fCount += tokens - 2;
+        }
     }
 
+    // alocar memória
     model->vertices = malloc(sizeof(Vec3) * vCount);
     model->normals = malloc(sizeof(Vec3) * vnCount);
     model->texcoords = malloc(sizeof(Vec2) * vtCount);
@@ -125,6 +134,7 @@ int loadOBJ(const char *filename, OBJModel *model)
     model->numTexcoords = vtCount;
     model->numFaces = fCount;
 
+    // --- Segundo passe: carregar dados ---
     rewind(file);
 
     size_t vi = 0, vti = 0, vni = 0, fi = 0;
@@ -155,24 +165,61 @@ int loadOBJ(const char *filename, OBJModel *model)
         }
         else if (strncmp(line, "f ", 2) == 0)
         {
-            Face face;
-            int matches = sscanf(line, "f %d/%d/%d %d/%d/%d %d/%d/%d",
-                                 &face.v[0], &face.vt[0], &face.vn[0],
-                                 &face.v[1], &face.vt[1], &face.vn[1],
-                                 &face.v[2], &face.vt[2], &face.vn[2]);
-            if (matches != 9)
+            // ---- Parse da face com N vértices ----
+            int v[64], vt[64], vn[64]; // suporta até 64 vértices por face
+            int count = 0;
+
+            char *ptr = line + 2; // pular "f "
+            while (*ptr && count < 64)
             {
-                printf("Erro: formato de face não suportado\n");
-                fclose(file);
-                return 0;
+                int vi_ = -1, vti_ = -1, vni_ = -1;
+                if (sscanf(ptr, "%d/%d/%d", &vi_, &vti_, &vni_) == 3)
+                {
+                    // v/vt/vn
+                }
+                else if (sscanf(ptr, "%d//%d", &vi_, &vni_) == 2)
+                {
+                    // v//vn
+                }
+                else if (sscanf(ptr, "%d/%d", &vi_, &vti_) == 2)
+                {
+                    // v/vt
+                }
+                else if (sscanf(ptr, "%d", &vi_) == 1)
+                {
+                    // só v
+                }
+
+                if (vi_ != -1)
+                {
+                    v[count] = vi_ - 1;
+                    vt[count] = (vti_ > 0) ? vti_ - 1 : -1;
+                    vn[count] = (vni_ > 0) ? vni_ - 1 : -1;
+                    count++;
+                }
+
+                // avança ptr para o próximo token
+                while (*ptr && *ptr != ' ')
+                    ptr++;
+                while (*ptr == ' ')
+                    ptr++;
             }
-            for (int i = 0; i < 3; i++)
+
+            // triangulação em fan: (v0,v[i],v[i+1])
+            for (int i = 1; i < count - 1; i++)
             {
-                face.v[i]--; // OBJ indices começam em 1
-                face.vt[i]--;
-                face.vn[i]--;
+                Face f;
+                f.v[0] = v[0];
+                f.v[1] = v[i];
+                f.v[2] = v[i + 1];
+                f.vt[0] = vt[0];
+                f.vt[1] = vt[i];
+                f.vt[2] = vt[i + 1];
+                f.vn[0] = vn[0];
+                f.vn[1] = vn[i];
+                f.vn[2] = vn[i + 1];
+                model->faces[fi++] = f;
             }
-            model->faces[fi++] = face;
         }
     }
 
@@ -188,11 +235,11 @@ void drawOBJ(OBJModel *model)
         Face f = model->faces[i];
         for (int j = 0; j < 3; j++)
         {
-            if (model->numNormals > 0)
+            if (f.vn[j] >= 0 && model->numNormals > 0)
                 glNormal3f(model->normals[f.vn[j]].x,
                            model->normals[f.vn[j]].y,
                            model->normals[f.vn[j]].z);
-            if (model->numTexcoords > 0)
+            if (f.vt[j] >= 0 && model->numTexcoords > 0)
                 glTexCoord2f(model->texcoords[f.vt[j]].u,
                              model->texcoords[f.vt[j]].v);
             glVertex3f(model->vertices[f.v[j]].x,
@@ -532,7 +579,7 @@ void init(void)
     initBuildings();
     // carregar textura do chão (arquivo deve existir)
     groundTexture = loadTexture("textures/grass.jpg"); // coloque sua imagem "grass.jpg" na pasta do executável
-    loadOBJ("models/Jet_Lowpoly.obj", &model);         // coloque seu modelo "Jet_Lowpoly.obj" na pasta do executável
+    loadOBJ("models/Jet_Lowpoly.obj", &model); // coloque seu modelo "jet.obj" na pasta do executável
 
     // Countdown
     startTime = getTime();      // marca o início do tempo total
