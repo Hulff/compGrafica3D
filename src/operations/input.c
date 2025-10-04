@@ -10,6 +10,8 @@
 #include "config.h"
 #include "input.h"
 
+void resetGame();
+
 #define M_PI 3.14159265f
 
 extern float r, g, b;
@@ -117,16 +119,24 @@ void teclado(unsigned char key, int x, int y)
         b = 0;
         break;
     case 'w':
+    case 'W':
         if (canMove) moveForward();
         break;
     case 's':
+    case 'S':
         if (canMove) moveBackwards();
         break;
     case 'a':
+    case 'A':
         if (canMove) moveLeft();
         break;
     case 'd':
+    case 'D':
         if (canMove) moveRight();
+        break;
+    case 'r':
+    case 'R':
+        resetGame();
         break;
     }
 

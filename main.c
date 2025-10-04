@@ -179,6 +179,7 @@ int loadOBJ(const char *filename, OBJModel *model)
     fclose(file);
     return 1;
 }
+
 void drawOBJ(OBJModel *model)
 {
     glBegin(GL_TRIANGLES);
@@ -252,37 +253,42 @@ static bool aabb_intersect(float axMin, float axMax, float ayMin, float ayMax, f
            (azMin <= bzMax && azMax >= bzMin);
 }
 
-// colisão avião ↔ chão
+// colisão avião e chão
 bool checkCollisionWithGround(float py, float halfPlane)
 {
     float planeBottom = py - halfPlane;
     return (planeBottom <= GROUND_Y);
 }
 
-// colisão avião ↔ prédio[i]
+// colisão avião e prédio
 bool checkCollisionWithBuildingIndex(int i, float px, float py, float pz, float halfPlane)
 {
-    float width  = 1.0f * 1.2f;               // X (você escalou 1.2 no drawScenario)
-    float height = 1.0f * scaleFactors[i];    // Y
-    float depth  = 1.0f * 1.0f;               // Z
+    float width  = 1.0f * 1.2f;            // X (mesma escala do drawScenario)
+    float height = 1.0f * scaleFactors[i]; // Y (altura do prédio)
+    float depth  = 1.0f * 1.0f;            // Z
 
     float bx = buildings[i].x;
-    float by = -2.0f; // centro Y do cubo (usado no translatef)
     float bz = buildings[i].z;
+
+    // Altura real do prédio considerando o chão
+    float byMin = GROUND_Y;           // base do prédio
+    float byMax = GROUND_Y + height;  // topo do prédio
 
     float bxMin = bx - width / 2.0f;
     float bxMax = bx + width / 2.0f;
     float bzMin = bz - depth / 2.0f;
     float bzMax = bz + depth / 2.0f;
-    float byMin = by - height / 2.0f;
-    float byMax = by + height / 2.0f;
 
-    float axMin = px - halfPlane;
-    float axMax = px + halfPlane;
-    float azMin = pz - halfPlane;
-    float azMax = pz + halfPlane;
-    float ayMin = py - halfPlane;
-    float ayMax = py + halfPlane;
+    // margem de segurança para que só detecte colisão quando estiver realmente próximo
+    float collisionBuffer = 0.1f;
+
+    // limites do avião com buffer
+    float axMin = px - halfPlane + collisionBuffer;
+    float axMax = px + halfPlane - collisionBuffer;
+    float ayMin = py - halfPlane + collisionBuffer;
+    float ayMax = py + halfPlane - collisionBuffer;
+    float azMin = pz - halfPlane + collisionBuffer;
+    float azMax = pz + halfPlane - collisionBuffer;
 
     return aabb_intersect(axMin, axMax, ayMin, ayMax, azMin, azMax,
                           bxMin, bxMax, byMin, byMax, bzMin, bzMax);
@@ -303,10 +309,11 @@ void initBuildings()
 {
     for (int i = 0; i < NUM_BUILDINGS; i++)
     {
-        buildings[i].x = (rand() % 20 - 10) / 2.0f; // parecido com os anéis
-        buildings[i].z = -(float)(i + 1) * 7.0f;    // mesma distância incremental
+        buildings[i].x = (rand() % 20 - 10) / 2.0f;
+        buildings[i].z = -(float)(i + 1) * 7.0f;
         buildings[i].y = 0.0f;
-        scaleFactors[i] = (rand() % 3) + 2.0f; // fator de escala aleatório entre 2  e 5
+
+        scaleFactors[i] = 5.0f + (rand() % 11); // fator de escala aleatório entre 2  e 5
     }
 }
 
@@ -725,6 +732,28 @@ void idle()
 
         lastTime = currentTime;
     }
+}
+
+void resetGame()
+{
+    camX = 0; camY = 5.0f; camZ = 0;
+    playerX = 0; playerY = 0; playerZ = 0;
+    movement = 0.1f;
+
+    lastRingIndex = -1;
+    wrongRing = false;
+    for (int i = 0; i < NUM_RINGS; i++)
+        rings[i].passed = false;
+
+    initBuildings();
+
+    startTime = getTime();
+    countdownStart = getTime();
+    countdownFinished = false;
+    timerRunning = false;
+    canMove = false;
+
+    glutPostRedisplay();
 }
 
 int main(int argc, char **argv)
