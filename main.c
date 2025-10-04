@@ -410,6 +410,7 @@ void desenhaPredioManual(float size)
       glVertex3f(-s,-s, s);
     glEnd();
 }
+
 void drawScenario()
 {
     for (int i = 0; i < NUM_BUILDINGS; i++)
@@ -417,27 +418,17 @@ void drawScenario()
         glPushMatrix();
         glTranslatef(buildings[i].x, -2.0f, buildings[i].z);
         float scale = scaleFactors[i];
-        glScalef(1.2f, scale * 1.0f, 1.0f);
+        glScalef(1.2f, scale, 1.0f);
 
-        glEnable(GL_CULL_FACE);
-        glFrontFace(GL_CCW);   // prédios foram desenhados
+        glColor3f(0.6f, 0.6f, 0.7f); // cor normal do prédio
 
-        // Frente ta cinza
-        glCullFace(GL_BACK);
-        glColor3f(0.6f,0.6f,0.7f);
+        glCullFace(GL_BACK);          // cull das faces de trás
         desenhaPredioManual(1.0f);
-
-        //faces ocultas em vermelho
-        glCullFace(GL_FRONT);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glColor3f(1.0f, 0.0f, 0.0f);
-        desenhaPredioManual(1.0f);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-        glDisable(GL_CULL_FACE);
 
         glPopMatrix();
     }
+
+    glDisable(GL_CULL_FACE);
 }
 
 void drawPlayer()
