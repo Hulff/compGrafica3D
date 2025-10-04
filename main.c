@@ -14,7 +14,7 @@
 #define SPEED 0.01f
 #define NUM_RINGS 10
 #define NUM_BUILDINGS 100
-#define GROUND_Y (-4.75f)
+#define GROUND_Y (-2.0f)
 #define PLANE_HALF 0.005f
 
 // texturas
@@ -42,8 +42,8 @@ double lastElapsed = 0.0;                      // guarda o último tempo decorri
 double countdownStart = 0;                     // momento em que o countdown começou
 double countdownTime = 3.0;                    // duração do countdown em segundos
 bool countdownFinished = false;
-bool canMove = false;     // false enquanto o countdown não terminar
-int lockMouseControl = 0; // toggle do controle via mouse
+bool canMove = false;                          // false enquanto o countdown não terminar
+int lockMouseControl = 0;                      // toggle do controle via mouse
 
 float movement = 0.1f; // velocidade de movimento da câmera
 
@@ -291,51 +291,49 @@ double getTime()
     return (double)clock() / CLOCKS_PER_SEC;
 }
 
-// checa interseção de duas AABB
-static bool aabb_intersect(float axMin, float axMax, float ayMin, float ayMax, float azMin, float azMax,
-                           float bxMin, float bxMax, float byMin, float byMax, float bzMin, float bzMax)
+// colisão AABB
+bool aabb_intersect(float axMin, float axMax, float ayMin, float ayMax, float azMin, float azMax,
+                    float bxMin, float bxMax, float byMin, float byMax, float bzMin, float bzMax)
 {
     return (axMin <= bxMax && axMax >= bxMin) &&
            (ayMin <= byMax && ayMax >= byMin) &&
            (azMin <= bzMax && azMax >= bzMin);
 }
 
-// colisão avião e chão
+// colisão com o chão
 bool checkCollisionWithGround(float py, float halfPlane)
 {
-    float planeBottom = py - halfPlane;
-    return (planeBottom <= GROUND_Y);
+    return (py - halfPlane) <= GROUND_Y;
 }
 
-// colisão avião e prédio
+// colisão com prédios
 bool checkCollisionWithBuildingIndex(int i, float px, float py, float pz, float halfPlane)
 {
-    float width = 1.0f * 1.2f;             // X (mesma escala do drawScenario)
-    float height = 1.0f * scaleFactors[i]; // Y (altura do prédio)
-    float depth = 1.0f * 1.0f;             // Z
+    float originalSizeY = 1.0f;
+    float scaleY = scaleFactors[i];
+    float baseY = -2.0f;
+
+    float halfHeight = (originalSizeY * scaleY) / 2.0f;
+    float byMin = baseY - halfHeight;
+    float byMax = baseY + halfHeight;
+
+    float width = 1.2f;
+    float depth = 1.0f;
 
     float bx = buildings[i].x;
     float bz = buildings[i].z;
-
-    // Altura real do prédio considerando o chão
-    float byMin = GROUND_Y;          // base do prédio
-    float byMax = GROUND_Y + height; // topo do prédio
 
     float bxMin = bx - width / 2.0f;
     float bxMax = bx + width / 2.0f;
     float bzMin = bz - depth / 2.0f;
     float bzMax = bz + depth / 2.0f;
 
-    // margem de segurança para que só detecte colisão quando estiver realmente próximo
-    float collisionBuffer = 0.1f;
-
-    // limites do avião com buffer
-    float axMin = px - halfPlane + collisionBuffer;
-    float axMax = px + halfPlane - collisionBuffer;
-    float ayMin = py - halfPlane + collisionBuffer;
-    float ayMax = py + halfPlane - collisionBuffer;
-    float azMin = pz - halfPlane + collisionBuffer;
-    float azMax = pz + halfPlane - collisionBuffer;
+    float axMin = px - halfPlane;
+    float axMax = px + halfPlane;
+    float ayMin = py - halfPlane;
+    float ayMax = py + halfPlane;
+    float azMin = pz - halfPlane;
+    float azMax = pz + halfPlane;
 
     return aabb_intersect(axMin, axMax, ayMin, ayMax, azMin, azMax,
                           bxMin, bxMax, byMin, byMax, bzMin, bzMax);
@@ -662,6 +660,13 @@ void display()
             lastRingIndex = i;
             rings[i].passed = true;
             wrongRing = false;
+
+            // Para o cronômetro se for o último anel
+            if (i == NUM_RINGS - 1)
+            {
+                timerRunning = false;
+                lastElapsed = getTime() - startTime; // registra o tempo final
+            }
         }
     }
 
@@ -720,7 +725,7 @@ void display()
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, buffer[i]);
     }
 
-    if (collided)
+    if (collided || lastRingIndex == NUM_RINGS - 1)
     {
         const char *msg = "APERTE R PARA REINICIAR";
         int len = strlen(msg);
