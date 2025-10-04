@@ -14,8 +14,8 @@
 #define SPEED 0.01f
 #define NUM_RINGS 10
 #define NUM_BUILDINGS 100
-#define GROUND_Y    (-4.75f)
-#define PLANE_HALF  0.005f
+#define GROUND_Y (-4.75f)
+#define PLANE_HALF 0.005f
 
 // texturas
 #define STB_IMAGE_IMPLEMENTATION
@@ -35,14 +35,14 @@ Structure buildings[NUM_BUILDINGS];
 // Definição das variáveis globais
 float r = 1.0f, g = 1.0f, b = 1.0f;
 float alpha = 0.0f, beta = 0.0f, delta = 1.0f; // ângulos de rotação e zoom
-float camX = 0, camY = 5.0f, camZ = 0;            // posição da camera
+float camX = 0, camY = 5.0f, camZ = 0;         // posição da camera
 float playerX = 0, playerY = 0, playerZ = 0;   // posição do player
-bool timerRunning = false; // inicia como false, só roda depois do countdown
-double lastElapsed = 0.0; // guarda o último tempo decorrido quando o cronômetro para
-double countdownStart = 0;   // momento em que o countdown começou
-double countdownTime = 3.0;  // duração do countdown em segundos
+bool timerRunning = false;                     // inicia como false, só roda depois do countdown
+double lastElapsed = 0.0;                      // guarda o último tempo decorrido quando o cronômetro para
+double countdownStart = 0;                     // momento em que o countdown começou
+double countdownTime = 3.0;                    // duração do countdown em segundos
 bool countdownFinished = false;
-bool canMove = false; // false enquanto o countdown não terminar
+bool canMove = false;     // false enquanto o countdown não terminar
 int lockMouseControl = 0; // toggle do controle via mouse
 
 float movement = 0.1f; // velocidade de movimento da câmera
@@ -263,16 +263,16 @@ bool checkCollisionWithGround(float py, float halfPlane)
 // colisão avião e prédio
 bool checkCollisionWithBuildingIndex(int i, float px, float py, float pz, float halfPlane)
 {
-    float width  = 1.0f * 1.2f;            // X (mesma escala do drawScenario)
+    float width = 1.0f * 1.2f;             // X (mesma escala do drawScenario)
     float height = 1.0f * scaleFactors[i]; // Y (altura do prédio)
-    float depth  = 1.0f * 1.0f;            // Z
+    float depth = 1.0f * 1.0f;             // Z
 
     float bx = buildings[i].x;
     float bz = buildings[i].z;
 
     // Altura real do prédio considerando o chão
-    float byMin = GROUND_Y;           // base do prédio
-    float byMax = GROUND_Y + height;  // topo do prédio
+    float byMin = GROUND_Y;          // base do prédio
+    float byMax = GROUND_Y + height; // topo do prédio
 
     float bxMin = bx - width / 2.0f;
     float bxMax = bx + width / 2.0f;
@@ -307,11 +307,11 @@ void initRings()
 
 void initBuildings()
 {
-    float zStart = -100.0f;   // ponto inicial na frente do jogador
-    float zEnd   = 0.0f;  // ponto final da área de prédios
+    float zStart = -100.0f; // ponto inicial na frente do jogador
+    float zEnd = 0.0f;      // ponto final da área de prédios
     for (int i = 0; i < NUM_BUILDINGS; i++)
     {
-        buildings[i].x = (rand() % 40 - 20) / 2.0f;              // X aleatório
+        buildings[i].x = (rand() % 40 - 20) / 2.0f;                // X aleatório
         buildings[i].z = zStart + (rand() % (int)(zEnd - zStart)); // Z aleatório dentro da faixa
         buildings[i].y = 0.0f;
 
@@ -341,12 +341,15 @@ void drawGround()
     glColor3f(1.0f, 1.0f, 1.0f); // branco para textura sem alteração de cor
 
     glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(-250.0f, 0.0f,  250.0f);
-        glTexCoord2f(repeat, 0.0f); glVertex3f( 250.0f, 0.0f,  250.0f);
-        glTexCoord2f(repeat, repeat); glVertex3f( 250.0f, 0.0f, -250.0f);
-        glTexCoord2f(0.0f, repeat); glVertex3f(-250.0f, 0.0f, -250.0f);
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-250.0f, 0.0f, 250.0f);
+    glTexCoord2f(repeat, 0.0f);
+    glVertex3f(250.0f, 0.0f, 250.0f);
+    glTexCoord2f(repeat, repeat);
+    glVertex3f(250.0f, 0.0f, -250.0f);
+    glTexCoord2f(0.0f, repeat);
+    glVertex3f(-250.0f, 0.0f, -250.0f);
     glEnd();
-
 
     if (groundTexture != 0)
     {
@@ -375,48 +378,48 @@ void drawRings()
         glPopMatrix();
     }
 }
-//desenha os predios manualmente
+// desenha os predios manualmente
 void desenhaPredioManual(float size)
 {
     float s = size / 2.0f;
 
     glBegin(GL_QUADS);
     // frente
-    glNormal3f(0,0,1);
-      glVertex3f(-s,-s, s);
-      glVertex3f( s,-s, s);
-      glVertex3f( s, s, s);
-      glVertex3f(-s, s, s);
+    glNormal3f(0, 0, 1);
+    glVertex3f(-s, -s, s);
+    glVertex3f(s, -s, s);
+    glVertex3f(s, s, s);
+    glVertex3f(-s, s, s);
     // trás
-    glNormal3f(0,0,-1);
-      glVertex3f(-s,-s,-s);
-      glVertex3f(-s, s,-s);
-      glVertex3f( s, s,-s);
-      glVertex3f( s,-s,-s);
+    glNormal3f(0, 0, -1);
+    glVertex3f(-s, -s, -s);
+    glVertex3f(-s, s, -s);
+    glVertex3f(s, s, -s);
+    glVertex3f(s, -s, -s);
     // esquerda
-    glNormal3f(-1,0,0);
-      glVertex3f(-s,-s,-s);
-      glVertex3f(-s,-s, s);
-      glVertex3f(-s, s, s);
-      glVertex3f(-s, s,-s);
+    glNormal3f(-1, 0, 0);
+    glVertex3f(-s, -s, -s);
+    glVertex3f(-s, -s, s);
+    glVertex3f(-s, s, s);
+    glVertex3f(-s, s, -s);
     // direita
-    glNormal3f(1,0,0);
-      glVertex3f( s,-s,-s);
-      glVertex3f( s, s,-s);
-      glVertex3f( s, s, s);
-      glVertex3f( s,-s, s);
+    glNormal3f(1, 0, 0);
+    glVertex3f(s, -s, -s);
+    glVertex3f(s, s, -s);
+    glVertex3f(s, s, s);
+    glVertex3f(s, -s, s);
     // topo
-    glNormal3f(0,1,0);
-      glVertex3f(-s, s,-s);
-      glVertex3f(-s, s, s);
-      glVertex3f( s, s, s);
-      glVertex3f( s, s,-s);
+    glNormal3f(0, 1, 0);
+    glVertex3f(-s, s, -s);
+    glVertex3f(-s, s, s);
+    glVertex3f(s, s, s);
+    glVertex3f(s, s, -s);
     // fundo
-    glNormal3f(0,-1,0);
-      glVertex3f(-s,-s,-s);
-      glVertex3f( s,-s,-s);
-      glVertex3f( s,-s, s);
-      glVertex3f(-s,-s, s);
+    glNormal3f(0, -1, 0);
+    glVertex3f(-s, -s, -s);
+    glVertex3f(s, -s, -s);
+    glVertex3f(s, -s, s);
+    glVertex3f(-s, -s, s);
     glEnd();
 }
 
@@ -431,7 +434,7 @@ void drawScenario()
 
         glColor3f(0.6f, 0.6f, 0.7f); // cor normal do prédio
 
-        glCullFace(GL_BACK);          // cull das faces de trás
+        glCullFace(GL_BACK); // cull das faces de trás
         desenhaPredioManual(1.0f);
 
         glPopMatrix();
@@ -458,7 +461,6 @@ void drawPlayer()
     playerY = py;
     playerZ = pz;
 
-
     glTranslatef(px, py, pz);
     float adjustmentFactor = 1.4f; // fator para ajustar a rotação do modelo
 
@@ -466,7 +468,7 @@ void drawPlayer()
     glRotatef(-10.0f, 1.0f, 0.0f, 0.0f);
 
     float yRotation = (-beta * 180.0f / 3.14159f);
-   
+
     glRotatef(yRotation, 0, 1, 0);
 
     float xRotation = (-alpha * 180.0f / 3.14159f) * adjustmentFactor;
@@ -477,11 +479,11 @@ void drawPlayer()
     glRotatef(xRotation, 1, 0, 0);
 
     float roll = (beta * 180.0f / 3.14159f);
-    if(roll > 30) roll = 30;
-    if(roll < -30) roll = -30;
+    if (roll > 30)
+        roll = 30;
+    if (roll < -30)
+        roll = -30;
     glRotatef(roll * adjustmentFactor, 0, 0, 1);
-    
-    
 
     glColor3f(1.0f, 0.0f, 0.0f);
     glScalef(0.1f, 0.1f, 0.1f);
@@ -501,23 +503,23 @@ void init(void)
     glEnable(GL_LIGHTING);       // habilita sistema de luz
     glEnable(GL_LIGHT0);         // ativa a luz 0
     glEnable(GL_COLOR_MATERIAL); // deixa glColor influenciar material
-    glEnable(GL_CULL_FACE); // ativa backface culling (desenha só faces visíveis)
-    glFrontFace(GL_CCW); // frente = anti-horário (padrão)
+    glEnable(GL_CULL_FACE);      // ativa backface culling (desenha só faces visíveis)
+    glFrontFace(GL_CCW);         // frente = anti-horário (padrão)
 
     // parâmetros da luz
-    GLfloat lightPos[]     = { 0.0f, 10.0f, 5.0f, 1.0f }; // posição (w=1 → pontual)
-    GLfloat lightAmbient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-    GLfloat lightDiffuse[] = { 0.8f, 0.8f, 0.8f, 1.0f };
-    GLfloat lightSpecular[]= { 1.0f, 1.0f, 1.0f, 1.0f };
+    GLfloat lightPos[] = {0.0f, 10.0f, 5.0f, 1.0f}; // posição (w=1 → pontual)
+    GLfloat lightAmbient[] = {0.2f, 0.2f, 0.2f, 1.0f};
+    GLfloat lightDiffuse[] = {0.8f, 0.8f, 0.8f, 1.0f};
+    GLfloat lightSpecular[] = {1.0f, 1.0f, 1.0f, 1.0f};
 
-    glLightfv(GL_LIGHT0, GL_AMBIENT,  lightAmbient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE,  lightDiffuse);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular);
     glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
     // material básico (pra objetos brilharem com especular)
-    GLfloat mat_specular[]  = { 1.0, 1.0, 1.0, 1.0 };
-    GLfloat mat_shininess[] = { 50.0 };
+    GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
+    GLfloat mat_shininess[] = {50.0};
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
     // === fim iluminação ===
@@ -532,13 +534,12 @@ void init(void)
     groundTexture = loadTexture("textures/grass.jpg"); // coloque sua imagem "grass.jpg" na pasta do executável
     loadOBJ("models/Jet_Lowpoly.obj", &model);         // coloque seu modelo "Jet_Lowpoly.obj" na pasta do executável
 
-    //Countdown
-    startTime = getTime();       // marca o início do tempo total
-    countdownStart = getTime();  // marca o início do countdown
+    // Countdown
+    startTime = getTime();      // marca o início do tempo total
+    countdownStart = getTime(); // marca o início do countdown
     countdownFinished = false;
 
     glCullFace(GL_BACK);
-
 };
 
 void display()
@@ -556,8 +557,8 @@ void display()
     gluLookAt(camX, camY, camZ,
               camX + dirX, camY + dirY, camZ + dirZ,
               0, 1, 0);
-    
-    GLfloat lightPos[] = { 0.0f, 20.0f, 20.0f, 1.0f };
+
+    GLfloat lightPos[] = {0.0f, 20.0f, 20.0f, 1.0f};
     glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
     glPushMatrix();
@@ -569,14 +570,17 @@ void display()
 
     bool collided = false;
 
-    if (checkCollisionWithGround(playerY, PLANE_HALF)) {
+    if (checkCollisionWithGround(playerY, PLANE_HALF))
+    {
         collided = true;
         movement = 0.0f;
         timerRunning = false;
     }
 
-    for (int i = 0; i < NUM_BUILDINGS; i++) {
-        if (checkCollisionWithBuildingIndex(i, playerX, playerY, playerZ, PLANE_HALF)) {
+    for (int i = 0; i < NUM_BUILDINGS; i++)
+    {
+        if (checkCollisionWithBuildingIndex(i, playerX, playerY, playerZ, PLANE_HALF))
+        {
             collided = true;
             movement = 0.0f;
             timerRunning = false;
@@ -657,10 +661,10 @@ void display()
 
         glColor3f(0.0f, 0.0f, 0.0f);
         glBegin(GL_QUADS);
-            glVertex2f(x, y);
-            glVertex2f(x + w, y);
-            glVertex2f(x + w, y + h);
-            glVertex2f(x, y + h);
+        glVertex2f(x, y);
+        glVertex2f(x + w, y);
+        glVertex2f(x + w, y + h);
+        glVertex2f(x, y + h);
         glEnd();
 
         glColor3f(1.0f, 1.0f, 1.0f);
@@ -671,7 +675,7 @@ void display()
 
     if (collided)
     {
-        const char* msg = "APERTE R PARA REINICIAR";
+        const char *msg = "APERTE R PARA REINICIAR";
         int len = strlen(msg);
         float charWidth = 10.0f;
         float x = (windW - len * charWidth) / 2.0f;
@@ -680,10 +684,10 @@ void display()
 
         glColor3f(0.0f, 0.0f, 0.0f);
         glBegin(GL_QUADS);
-            glVertex2f(x, y);
-            glVertex2f(x + w, y);
-            glVertex2f(x + w, y + h);
-            glVertex2f(x, y + h);
+        glVertex2f(x, y);
+        glVertex2f(x + w, y);
+        glVertex2f(x + w, y + h);
+        glVertex2f(x, y + h);
         glEnd();
 
         glColor3f(1.0f, 1.0f, 1.0f);
@@ -730,15 +734,20 @@ void idle()
                 printf("Velocidade Restaurada \n");
             }
         }
-        glutPostRedisplay();//garante que a tela será redesenhada a cada frame assim o relogio funciona corretamente
+        glutPostRedisplay(); // garante que a tela será redesenhada a cada frame assim o relogio funcion
         lastTime = currentTime;
     }
 }
 
 void resetGame()
 {
-    camX = 0; camY = 5.0f; camZ = 0;
-    playerX = 0; playerY = 0; playerZ = 0;
+    camX = 0;
+    camY = 5.0f;
+    camZ = 0;
+    playerX = 0;
+    playerY = 0;
+    playerZ = 0;
+    alpha = 0.0f, beta = 0.0f, delta = 1.0f; // ângulos de rotação e zoom
     movement = 0.1f;
 
     lastRingIndex = -1;
