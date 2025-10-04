@@ -16,6 +16,7 @@
 #define NUM_BUILDINGS 100
 #define GROUND_Y (-2.0f)
 #define PLANE_HALF 0.005f
+#define NUM_PARTICLES 100
 
 // texturas
 #define STB_IMAGE_IMPLEMENTATION
@@ -44,6 +45,8 @@ double countdownTime = 3.0;                    // duração do countdown em segu
 bool countdownFinished = false;
 bool canMove = false;                          // false enquanto o countdown não terminar
 int lockMouseControl = 0;                      // toggle do controle via mouse
+bool explosionActive = false;                  // flag para indicar se a explosão está ativa
+double explosionStartTime = 0;                 // tempo de início da explosão
 
 float movement = 0.1f; // velocidade de movimento da câmera
 
@@ -75,6 +78,14 @@ typedef struct
     int vt[3]; // índices de texcoords (ou -1)
     int vn[3]; // índices de normais  (ou -1)
 } Face;
+
+typedef struct {
+    float x, y, z; // posição
+    float vx, vy, vz; // velocidade
+    bool active; // se tá ativa
+} Particle;
+
+Particle particles[NUM_PARTICLES];             // partículas de explosão
 
 typedef struct
 {
@@ -748,6 +759,23 @@ void display()
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, msg[i]);
     }
 
+    if (collided && !explosionActive)
+    {
+        explosionActive = true;
+        explosionStartTime = getTime();
+        for (int i = 0; i < NUM_PARTICLES; i++)
+        {
+            particles[i].x = playerX;
+            particles[i].y = playerY;
+            particles[i].z = playerZ;
+            // velocidades aleatórias pequenas
+            particles[i].vx = ((rand() % 200) - 100) / 100.0f;
+            particles[i].vy = ((rand() % 200) - 100) / 100.0f;
+            particles[i].vz = ((rand() % 200) - 100) / 100.0f;
+            particles[i].active = true;
+        }
+    }
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
 
@@ -755,6 +783,33 @@ void display()
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
+
+    // explosão
+    if (explosionActive)
+    {
+        double t = getTime() - explosionStartTime;
+        if (t > 1.0)
+        {
+            explosionActive = false;
+        }
+        else
+        {
+            glDisable(GL_LIGHTING);
+            glPointSize(5.0f);
+            glBegin(GL_POINTS);
+            glColor3f(1.0f, 0.5f, 0.0f);
+            for (int i = 0; i < NUM_PARTICLES; i++)
+            {
+                if (!particles[i].active) continue;
+                float px = particles[i].x + particles[i].vx * t;
+                float py = particles[i].y + particles[i].vy * t;
+                float pz = particles[i].z + particles[i].vz * t;
+                glVertex3f(px, py, pz);
+            }
+            glEnd();
+            glEnable(GL_LIGHTING);
+        }
+    }
 
     glutSwapBuffers();
 }
