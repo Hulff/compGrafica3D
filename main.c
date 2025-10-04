@@ -366,7 +366,50 @@ void drawRings()
         glPopMatrix();
     }
 }
+//desenha os predios manualmente
+void desenhaPredioManual(float size)
+{
+    float s = size / 2.0f;
 
+    glBegin(GL_QUADS);
+    // frente
+    glNormal3f(0,0,1);
+      glVertex3f(-s,-s, s);
+      glVertex3f( s,-s, s);
+      glVertex3f( s, s, s);
+      glVertex3f(-s, s, s);
+    // trás
+    glNormal3f(0,0,-1);
+      glVertex3f(-s,-s,-s);
+      glVertex3f(-s, s,-s);
+      glVertex3f( s, s,-s);
+      glVertex3f( s,-s,-s);
+    // esquerda
+    glNormal3f(-1,0,0);
+      glVertex3f(-s,-s,-s);
+      glVertex3f(-s,-s, s);
+      glVertex3f(-s, s, s);
+      glVertex3f(-s, s,-s);
+    // direita
+    glNormal3f(1,0,0);
+      glVertex3f( s,-s,-s);
+      glVertex3f( s, s,-s);
+      glVertex3f( s, s, s);
+      glVertex3f( s,-s, s);
+    // topo
+    glNormal3f(0,1,0);
+      glVertex3f(-s, s,-s);
+      glVertex3f(-s, s, s);
+      glVertex3f( s, s, s);
+      glVertex3f( s, s,-s);
+    // fundo
+    glNormal3f(0,-1,0);
+      glVertex3f(-s,-s,-s);
+      glVertex3f( s,-s,-s);
+      glVertex3f( s,-s, s);
+      glVertex3f(-s,-s, s);
+    glEnd();
+}
 void drawScenario()
 {
     for (int i = 0; i < NUM_BUILDINGS; i++)
@@ -375,8 +418,24 @@ void drawScenario()
         glTranslatef(buildings[i].x, -2.0f, buildings[i].z);
         float scale = scaleFactors[i];
         glScalef(1.2f, scale * 1.0f, 1.0f);
-        glColor3f(0.6f, 0.6f, 0.7f);
-        glutSolidCube(1.0f);
+
+        glEnable(GL_CULL_FACE);
+        glFrontFace(GL_CCW);   // prédios foram desenhados
+
+        // Frente ta cinza
+        glCullFace(GL_BACK);
+        glColor3f(0.6f,0.6f,0.7f);
+        desenhaPredioManual(1.0f);
+
+        //faces ocultas em vermelho
+        glCullFace(GL_FRONT);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glColor3f(1.0f, 0.0f, 0.0f);
+        desenhaPredioManual(1.0f);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        glDisable(GL_CULL_FACE);
+
         glPopMatrix();
     }
 }
