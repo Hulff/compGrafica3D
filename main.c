@@ -34,7 +34,7 @@ Structure rings[NUM_RINGS];
 Structure buildings[NUM_BUILDINGS];
 
 // Definição das variáveis globais
-float r = 1.0f, g = 1.0f, b = 1.0f;
+float r = 0.53f, g = 0.81f, b = 0.92f;
 float alpha = 0.0f, beta = 0.0f, delta = 1.0f; // ângulos de rotação e zoom
 float camX = 0, camY = 5.0f, camZ = 0;         // posição da camera
 float playerX = 0, playerY = 0, playerZ = 0;   // posição do player
