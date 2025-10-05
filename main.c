@@ -495,8 +495,6 @@ void drawScenario()
 
         glPopMatrix();
     }
-
-    glDisable(GL_CULL_FACE);
 }
 
 void drawPlayer()
@@ -557,7 +555,10 @@ void init(void)
 
     // === iluminação ===
     glEnable(GL_LIGHTING);       // habilita sistema de luz
+    glDepthFunc(GL_LEQUAL);
     glEnable(GL_LIGHT0);         // ativa a luz 0
+    glEnable(GL_NORMALIZE);
+    glShadeModel(GL_SMOOTH);
     glEnable(GL_COLOR_MATERIAL); // deixa glColor influenciar material
     glEnable(GL_CULL_FACE);      // ativa backface culling (desenha só faces visíveis)
     glFrontFace(GL_CCW);         // frente = anti-horário (padrão)
