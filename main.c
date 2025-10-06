@@ -667,7 +667,7 @@ void init(void)
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(60.0, (float)windW / windH, 0.1, 100.0);
+    gluPerspective(75.0, (float)windW / windH, 0.1, 100.0);
     glMatrixMode(GL_MODELVIEW);
     initRings();
     initBuildings();
@@ -1014,6 +1014,7 @@ void resetGame()
         rings[i].passed = false;
 
     initBuildings();
+    initRings();
 
     startTime = getTime();
     countdownStart = getTime();
