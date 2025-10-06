@@ -857,6 +857,7 @@ void display()
                 startTime = getTime();
                 timerRunning = true;
                 canMove = true;
+                lockMouseControl = 1; // libera o controle do mouse
                 remaining = 0.0;
             }
             sprintf(buffer, "Comecando em: %.0f", ceil(remaining));
