@@ -435,6 +435,20 @@ void drawRings()
         glPopMatrix();
     }
 }
+
+void drawRingsShadow()
+{
+    for (int i = 0; i < NUM_RINGS; i++)
+    {
+        glPushMatrix();
+        glTranslatef(rings[i].x, rings[i].y, rings[i].z);
+
+        glColor4f(0.0f, 0.0f, 0.0f, 0.5f); // cor da sombra
+
+        glutSolidTorus(0.05, 1.0, 20, 60);
+        glPopMatrix();
+    }
+}
 // desenha os predios manualmente
 void desenhaPredioManual(float size)
 {
@@ -498,6 +512,24 @@ void drawScenario()
     }
 }
 
+void drawScenarioShadow()
+{
+    for (int i = 0; i < NUM_BUILDINGS; i++)
+    {
+        glPushMatrix();
+        glTranslatef(buildings[i].x, -2.0f, buildings[i].z);
+        float scale = scaleFactors[i];
+        glScalef(1.2f, scale, 1.0f);
+
+        glColor4f(0.0f, 0.0f, 0.0f, 0.5f); // cor da sombra
+
+        glCullFace(GL_BACK); // cull das faces de trás
+        desenhaPredioManual(1.0f);
+
+        glPopMatrix();
+    }
+}
+
 void drawPlayer()
 {
     glPushMatrix();
@@ -541,6 +573,56 @@ void drawPlayer()
     glRotatef(roll * adjustmentFactor, 0, 0, 1);
 
     glColor3f(1.0f, 0.0f, 0.0f);
+    glScalef(0.1f, 0.1f, 0.1f);
+
+    drawOBJ(&model);
+
+    glPopMatrix();
+}
+
+void drawPlayerShadow()
+{
+    glPushMatrix();
+
+    float dirX = cosf(alpha) * sinf(beta);
+    float dirY = sinf(alpha);
+    float dirZ = -cosf(alpha) * cosf(beta);
+
+    float distance = 1.5f; // distância à frente da câmera
+    float px = camX + dirX * distance;
+    float py = camY + dirY * distance;
+    float pz = camZ + dirZ * distance;
+
+    // atualiza a posição global do avião para colisão
+    playerX = px;
+    playerY = py;
+    playerZ = pz;
+
+    glTranslatef(px, py, pz);
+    float adjustmentFactor = 1.4f; // fator para ajustar a rotação do modelo
+
+    glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
+    glRotatef(-10.0f, 1.0f, 0.0f, 0.0f);
+
+    float yRotation = (-beta * 180.0f / 3.14159f);
+
+    glRotatef(yRotation, 0, 1, 0);
+
+    float xRotation = (-alpha * 180.0f / 3.14159f) * adjustmentFactor;
+    if (xRotation > 40)
+        xRotation = 40;
+    if (xRotation < -20)
+        xRotation = -20;
+    glRotatef(xRotation, 1, 0, 0);
+
+    float roll = (beta * 180.0f / 3.14159f);
+    if (roll > 30)
+        roll = 30;
+    if (roll < -30)
+        roll = -30;
+    glRotatef(roll * adjustmentFactor, 0, 0, 1);
+
+    glColor4f(0.0f, 0.0f, 0.0f, 0.5f); // cor da sombra
     glScalef(0.1f, 0.1f, 0.1f);
 
     drawOBJ(&model);
@@ -684,9 +766,10 @@ void display()
     glPushMatrix();
         drawGround();
         drawScenario();
-        drawSceneShadow(drawPlayer, lightPos, groundPlane);
-        drawSceneShadow(drawScenario, lightPos, groundPlane);
-        drawSceneShadow(drawRings, lightPos, groundPlane);
+        
+        drawSceneShadow(drawPlayerShadow, lightPos, groundPlane);
+        drawSceneShadow(drawScenarioShadow, lightPos, groundPlane);
+        drawSceneShadow(drawRingsShadow, lightPos, groundPlane);
         drawRings();
     glPopMatrix();
     drawPlayer();
