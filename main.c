@@ -2,6 +2,7 @@
 #include "menu.h"
 #include "config.h"
 #include "input.h"
+#include "shadows.h"
 
 #include <GL/freeglut.h>
 #include <stdbool.h>
@@ -562,6 +563,7 @@ void init(void)
     glEnable(GL_COLOR_MATERIAL); // deixa glColor influenciar material
     glEnable(GL_CULL_FACE);      // ativa backface culling (desenha só faces visíveis)
     glFrontFace(GL_CCW);         // frente = anti-horário (padrão)
+    initShadows();
 
     // parâmetros da luz
     GLfloat lightPos[] = {0.0f, 10.0f, 5.0f, 1.0f}; // posição (w=1 → pontual)
@@ -599,6 +601,65 @@ void init(void)
     glCullFace(GL_BACK);
 };
 
+void initShadows(void) { }
+
+void applyShadowMatrix(const GLfloat lightPos[4], const GLfloat groundPlane[4]) {
+    GLfloat dot = groundPlane[0]*lightPos[0] +
+                  groundPlane[1]*lightPos[1] +
+                  groundPlane[2]*lightPos[2] +
+                  groundPlane[3]*lightPos[3]; // adicione w do plano
+
+    GLfloat shadowMat[16];
+
+    shadowMat[0]  = dot - lightPos[0] * groundPlane[0];
+    shadowMat[4]  = -lightPos[0] * groundPlane[1];
+    shadowMat[8]  = -lightPos[0] * groundPlane[2];
+    shadowMat[12] = -lightPos[0] * groundPlane[3];
+
+    shadowMat[1]  = -lightPos[1] * groundPlane[0];
+    shadowMat[5]  = dot - lightPos[1] * groundPlane[1];
+    shadowMat[9]  = -lightPos[1] * groundPlane[2];
+    shadowMat[13] = -lightPos[1] * groundPlane[3];
+
+    shadowMat[2]  = -lightPos[2] * groundPlane[0];
+    shadowMat[6]  = -lightPos[2] * groundPlane[1];
+    shadowMat[10] = dot - lightPos[2] * groundPlane[2];
+    shadowMat[14] = -lightPos[2] * groundPlane[3];
+
+    shadowMat[3]  = -lightPos[3] * groundPlane[0];
+    shadowMat[7]  = -lightPos[3] * groundPlane[1];
+    shadowMat[11] = -lightPos[3] * groundPlane[2];
+    shadowMat[15] = dot - lightPos[3] * groundPlane[3];
+
+    glMultMatrixf(shadowMat);
+}
+
+void drawSceneShadow(void (*drawGeometryFunc)(void),
+                     const GLfloat lightPos[4],
+                     const GLfloat groundPlane[4])
+{
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+    // Estado fixo para sombra
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+    glShadeModel(GL_FLAT);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(-1.0f, -1.0f);
+
+    glPushMatrix();
+        glTranslatef(0.0f, 0.01f, 0.0f); // evita z-fighting e reduz altura aparente
+        applyShadowMatrix(lightPos, groundPlane);
+        drawGeometryFunc();
+    glPopMatrix();
+
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    glPopAttrib();
+}
+
 void display()
 {
     glClearColor(r, g, b, 1.0f);
@@ -618,10 +679,15 @@ void display()
     GLfloat lightPos[] = {0.0f, 20.0f, 20.0f, 1.0f};
     glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
+    GLfloat groundPlane[] = {0.0f, 1.0f, 0.0f, -GROUND_Y};
+
     glPushMatrix();
-    drawGround();
-    drawScenario();
-    drawRings();
+        drawGround();
+        drawScenario();
+        drawSceneShadow(drawPlayer, lightPos, groundPlane);
+        drawSceneShadow(drawScenario, lightPos, groundPlane);
+        drawSceneShadow(drawRings, lightPos, groundPlane);
+        drawRings();
     glPopMatrix();
     drawPlayer();
 
@@ -632,6 +698,7 @@ void display()
         collided = true;
         movement = 0.0f;
         timerRunning = false;
+        lockMouseControl = 0;
     }
 
     for (int i = 0; i < NUM_BUILDINGS; i++)
