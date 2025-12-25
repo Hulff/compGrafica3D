@@ -13,7 +13,7 @@
 ## 👥 Equipe
 
 * Nome Pedro Hugo Ursulino Fernandes 2023004677
-* Nome 2 (Matrícula)
+* Gabriel Farias Leandro 2023005084
 * Nome 3 (Matrícula)
 * Nome 4 (Matrícula)
 
